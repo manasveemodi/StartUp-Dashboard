@@ -8,7 +8,7 @@ const API = axios.create({
   // Use the Render environment variable if available, otherwise use localhost
   baseURL: process.env.REACT_APP_API_URL 
     ? `${process.env.REACT_APP_API_URL}/api` 
-    : "https://startup-dashboard-3v28.onrender.com/api",
+    : "https://startup-dashboard-3v28.onrender.com/api/auth/register",
   withCredentials: true,
 });
 
