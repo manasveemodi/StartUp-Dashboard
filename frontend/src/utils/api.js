@@ -37,8 +37,7 @@ export const recordingsAPI = {
     API.delete(`/recordings/${id}`),
 
   getUrl: (filename) =>
-    `http://localhost:5000/uploads/${filename}`,
-};
+        `https://startup-dashboard-3v28.onrender.com/uploads/${filename}`,};
 
 // ===================== FILES (✅ FIX ADDED) =====================
 export const filesAPI = {
@@ -54,8 +53,7 @@ export const filesAPI = {
     API.delete(`/files/${id}`),
 
   getUrl: (filename) =>
-    `http://localhost:5000/uploads/${filename}`,
-};
+      `https://startup-dashboard-3v28.onrender.com/uploads/${filename}`,};
 
 // ===================== COMPANIES =====================
 export const companiesAPI = {

@@ -28,7 +28,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
       _id: Date.now().toString(),
       filename: req.file.filename,
       originalName: req.file.originalname,
-      url: `http://localhost:5000/uploads/${req.file.filename}`,
+      url: `https://startup-dashboard-3v28.onrender.com/uploads/${req.file.filename}`,
       meetingId,
       createdAt: new Date(),
       fileSize: req.file.size,
