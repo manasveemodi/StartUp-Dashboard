@@ -20,13 +20,17 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",");
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://startup-portal-ewyy.onrender.com"
+];
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("Blocked by CORS:", origin); // debug
       callback(new Error("Not allowed by CORS"));
     }
   },

@@ -7563,3 +7563,5 @@
 2026-04-08 12:37:25 [info]: ::1 - - [08/Apr/2026:07:07:25 +0000] "GET /api/companies/69d5f3caabd97d045e57a3cc HTTP/1.1" 200 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
 2026-04-08 12:37:25 [info]: ::1 - - [08/Apr/2026:07:07:25 +0000] "GET /api/companies/69d5f3caabd97d045e57a3cc HTTP/1.1" 200 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
 2026-04-08 12:37:25 [info]: ::1 - - [08/Apr/2026:07:07:25 +0000] "GET /api/companies/69d5f3caabd97d045e57a3cc/time HTTP/1.1" 200 119 "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+2026-04-08 12:38:51 [info]: 🚀 MeetMind API running on port 5000 [development]
+2026-04-08 12:38:51 [info]: ✅ MongoDB connected
