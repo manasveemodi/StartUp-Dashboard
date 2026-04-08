@@ -42,7 +42,6 @@ function fmtTimer(sec) {
 const STATUS_CONFIG = {
   active:   { label: "Active",   color: "#059669", bg: "#d1fae5" },
   inactive: { label: "Inactive", color: "#6b7280", bg: "#f3f4f6" },
-  prospect: { label: "Prospect", color: "#d97706", bg: "#fef3c7" },
 };
 const PRIORITY_CONFIG = {
   high:   { color: "#e11d48", bg: "#ffe4e6" },

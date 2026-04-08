@@ -14,8 +14,7 @@ const INDUSTRIES = [
 ];
 const STATUS_OPTS = [
   { value:"active",   label:"Active",   desc:"Currently working together" },
-  { value:"prospect", label:"Prospect", desc:"Potential future client" },
-  { value:"client",   label:"Client",   desc:"Paying client or partner" },
+ 
   { value:"inactive", label:"Inactive", desc:"No longer active" },
 ];
 const lbl = { fontSize:11,fontWeight:700,color:"var(--text-muted)",display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.5px" };

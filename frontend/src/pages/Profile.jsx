@@ -4,7 +4,7 @@ import { API } from "../context/AuthContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 
-function Avatar({ name, size = 72 }) {
+function Avatar({ name, size = 52 }) {
   const initials = (name || "U").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const colors = ["#7c6dff", "#00d4c8", "#ff5e7a", "#ffb830", "#00e5a0"];
   const color = colors[(name?.charCodeAt(0) || 0) % colors.length];
@@ -73,18 +73,21 @@ export default function Profile() {
 
       {/* Profile card */}
       <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden", marginBottom: 20 }}>
-        {/* Banner */}
-        <div style={{ height: 80, background: "linear-gradient(135deg, var(--accent-soft), var(--teal-soft))", position: "relative" }} />
+        
+        {/* Banner - Increased height to 100 for better spacing */}
+        <div style={{ height: 100, background: "linear-gradient(135deg, var(--accent-soft), var(--teal-soft))", position: "relative" }} />
 
         <div style={{ padding: "0 28px 28px" }}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginTop: -36, marginBottom: 24 }}>
-            <div style={{ border: "3px solid var(--bg-card)", borderRadius: "50%" }}>
-              <Avatar name={user?.name} size={72} />
+          {/* Avatar and Name Row - Reduced negative margin and adjusted alignment */}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginTop: -40, marginBottom: 28, position: "relative", zIndex: 2 }}>
+            <div style={{ border: "4px solid var(--bg-card)", borderRadius: "50%", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+              <Avatar name={user?.name} size={80} />
             </div>
-            <div style={{ paddingBottom: 4 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2 }}>{user?.name}</div>
+            {/* Added paddingBottom to the text container so the name sits comfortably below the banner line */}
+            <div style={{ paddingBottom: 6 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.2, color: "var(--text-primary)" }}>{user?.name}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{user?.email}</span>
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{user?.email}</span>
                 <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700, textTransform: "uppercase", background: rc.bg, color: rc.color }}>
                   {rc.label}
                 </span>

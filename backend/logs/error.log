@@ -253,3 +253,118 @@
     at next (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\express\lib\router\route.js:149:13)
     at C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\middleware\auth.js:22:3
     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-04-06 11:31:55 [error]: MongooseError: Connection.prototype.close() no longer accepts a callback
+    at NativeConnection.close (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\connection.js:1209:11)
+    at Server.<anonymous> (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\server.js:115:25)
+    at Object.onceWrapper (node:events:622:28)
+    at Server.emit (node:events:508:28)
+    at emitCloseNT (node:net:2427:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+2026-04-07 18:45:44 [error]: StrictPopulateError: Cannot populate path `company_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 0)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:85:29
+2026-04-07 18:45:44 [error]: StrictPopulateError: Cannot populate path `company_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 0)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:85:29
+2026-04-07 18:45:59 [error]: StrictPopulateError: Cannot populate path `company_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 0)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:85:29
+2026-04-07 18:45:59 [error]: StrictPopulateError: Cannot populate path `company_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 0)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:85:29
+2026-04-07 18:46:27 [error]: StrictPopulateError: Cannot populate path `company_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 0)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:85:29
+2026-04-07 18:46:27 [error]: StrictPopulateError: Cannot populate path `company_id` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 0)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:85:29
+2026-04-08 10:44:10 [error]: StrictPopulateError: Cannot populate path `company` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 6)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:23:7
+2026-04-08 10:44:10 [error]: StrictPopulateError: Cannot populate path `company` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 6)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:23:7
+2026-04-08 10:44:53 [error]: StrictPopulateError: Cannot populate path `company` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 6)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:23:7
+2026-04-08 10:44:53 [error]: StrictPopulateError: Cannot populate path `company` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 6)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:23:7
+2026-04-08 10:45:12 [error]: StrictPopulateError: Cannot populate path `company` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 6)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:23:7
+2026-04-08 10:45:12 [error]: StrictPopulateError: Cannot populate path `company` because it is not in your schema. Set the `strictPopulate` option to false to override.
+    at getModelsMapForPopulate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\helpers\populate\getModelsMapForPopulate.js:50:12)
+    at _populatePath (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4492:21)
+    at model.populate (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\model.js:4459:21)
+    at model.Query._find (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:2456:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async model.Query.exec (C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\node_modules\mongoose\lib\query.js:4627:63)
+    at async Promise.all (index 6)
+    at async C:\Users\Bhavin\Desktop\meetmind-v6\meeting-dashboard\backend\routes\meetings.js:23:7

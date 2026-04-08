@@ -85,6 +85,8 @@ app.use("/api/recordings", require("./routes/recordings"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/admin",      require("./routes/admin"));
 
+app.use("/api/files", require("./routes/files"));
+
 // Health check (no auth)
 app.get("/api/health", (req, res) => {
   res.json({

@@ -17,9 +17,18 @@ export default function NoteCard({ note, onDelete, onEdit, onPin }) {
     <div
       className="animate-fade"
       style={{
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius)", padding: 18, transition: "all 0.25s",
+        background: "var(--bg-card)", 
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius)", 
+        padding: 18, 
+        transition: "all 0.25s",
         borderLeft: `3px solid ${pc.border}`,
+        width: "100%",
+        // FLEXBOX FOR UNIFORM HEIGHT
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        boxSizing: "border-box",
         ...(note.isPinned && { boxShadow: `0 0 0 1px var(--amber-soft)`, borderColor: "var(--amber)" }),
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card-hover)")}
@@ -48,11 +57,12 @@ export default function NoteCard({ note, onDelete, onEdit, onPin }) {
         }}>{note.priority}</span>
       </div>
 
-      {/* Content */}
+      {/* Content - flexGrow ensures this area stretches to fill the card */}
       <p style={{
         fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65,
         marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 3,
         WebkitBoxOrient: "vertical", overflow: "hidden",
+        flexGrow: 1, 
       }}>{note.content}</p>
 
       {/* Tags */}
@@ -82,35 +92,23 @@ export default function NoteCard({ note, onDelete, onEdit, onPin }) {
       )}
 
       {/* Footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Clock size={10} color="var(--text-muted)" />
           <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "JetBrains Mono" }}>
-            {format(new Date(note.createdAt), "MMM d, yyyy · HH:mm")}
+            {format(new Date(note.createdAt), "MMM d, yyyy")}
           </span>
         </div>
         <div style={{ display: "flex", gap: 2 }}>
           {onPin && (
-            <button onClick={() => onPin(note._id)} title={note.isPinned ? "Unpin" : "Pin"}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, borderRadius: "var(--radius-xs)", color: note.isPinned ? "var(--amber)" : "var(--text-muted)", transition: "all 0.2s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--amber)"; e.currentTarget.style.background = "var(--amber-soft)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = note.isPinned ? "var(--amber)" : "var(--text-muted)"; e.currentTarget.style.background = "none"; }}>
+            <button onClick={(e) => { e.stopPropagation(); onPin(note._id); }} 
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, borderRadius: "var(--radius-xs)", color: note.isPinned ? "var(--amber)" : "var(--text-muted)" }}>
               {note.isPinned ? <PinOff size={13} /> : <Pin size={13} />}
             </button>
           )}
-          {onEdit && (
-            <button onClick={() => onEdit(note)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, borderRadius: "var(--radius-xs)", color: "var(--text-muted)", transition: "all 0.2s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--accent-soft)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}>
-              <Edit3 size={13} />
-            </button>
-          )}
           {onDelete && (
-            <button onClick={() => onDelete(note._id)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, borderRadius: "var(--radius-xs)", color: "var(--text-muted)", transition: "all 0.2s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--rose)"; e.currentTarget.style.background = "var(--rose-soft)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(note._id); }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, borderRadius: "var(--radius-xs)", color: "var(--text-muted)" }}>
               <Trash2 size={13} />
             </button>
           )}

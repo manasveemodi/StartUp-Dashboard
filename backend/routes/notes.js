@@ -20,7 +20,6 @@ router.get("/meeting/:meetingId", protect, asyncHandler(async (req, res) => {
   if (priority) filter.priority = priority;
   if (search)   filter.$text = { $search: search };
 
-  // ✅ ROLE FILTER
   if (req.user.role !== "admin") {
     filter.createdBy = req.user._id;
   }
@@ -32,7 +31,17 @@ router.get("/meeting/:meetingId", protect, asyncHandler(async (req, res) => {
       .sort({ isPinned: -1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
-      .populate("createdBy","name avatar"),
+      .populate("createdBy","name avatar")
+      .populate("companyId", "name")
+      // 🔥 FINAL FIX (NESTED POPULATE)
+      .populate({
+        path: "meetingId",
+        select: "title companyId",
+        populate: {
+          path: "companyId",
+          select: "name"
+        }
+      }),
 
     Note.countDocuments(filter),
   ]);
@@ -55,7 +64,6 @@ router.get("/company/:companyId", protect, asyncHandler(async (req, res) => {
   if (priority) filter.priority = priority;
   if (search)   filter.$text = { $search: search };
 
-  // ✅ ROLE FILTER
   if (req.user.role !== "admin") {
     filter.createdBy = req.user._id;
   }
@@ -67,7 +75,17 @@ router.get("/company/:companyId", protect, asyncHandler(async (req, res) => {
       .sort({ isPinned: -1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
-      .populate("createdBy","name avatar"),
+      .populate("createdBy","name avatar")
+      .populate("companyId", "name")
+      // 🔥 FINAL FIX
+      .populate({
+        path: "meetingId",
+        select: "title companyId",
+        populate: {
+          path: "companyId",
+          select: "name"
+        }
+      }),
 
     Note.countDocuments(filter),
   ]);
@@ -81,17 +99,26 @@ router.get("/company/:companyId", protect, asyncHandler(async (req, res) => {
 }));
 
 
-// ── CREATE NOTE ──────────────────────────────────────────────
+// ── CREATE NOTE (AUTO COMPANY FIX) ───────────────────────────
 router.post("/", protect, asyncHandler(async (req, res) => {
-  const { meetingId, companyId, title, content } = req.body;
+  let { meetingId, companyId, title, content } = req.body;
 
   if (!title?.trim()) throw new AppError("Note title is required", 400);
   if (!content?.trim()) throw new AppError("Note content is required", 400);
   if (!meetingId && !companyId) throw new AppError("A meetingId or companyId is required", 400);
 
+  // 🔥 AUTO ASSIGN COMPANY FROM MEETING
+  if (!companyId && meetingId) {
+    const meeting = await Meeting.findById(meetingId).populate("companyId");
+    if (meeting?.companyId) {
+      companyId = meeting.companyId._id;
+    }
+  }
+
   const note = await Note.create({
     ...req.body,
-    createdBy: req.user._id   // ✅ IMPORTANT
+    companyId, // ✅ FORCE SAVE
+    createdBy: req.user._id
   });
 
   if (meetingId) await Meeting.findByIdAndUpdate(meetingId, { $inc: { noteCount: 1 } });
@@ -101,13 +128,12 @@ router.post("/", protect, asyncHandler(async (req, res) => {
 }));
 
 
-// ── UPDATE NOTE (SECURED) ────────────────────────────────────
+// ── UPDATE NOTE ─────────────────────────────────────────────
 router.patch("/:id", protect, validators.mongoId, asyncHandler(async (req, res) => {
   const note = await Note.findById(req.params.id);
 
   if (!note) throw new AppError("Note not found", 404);
 
-  // ✅ SECURITY CHECK
   if (
     req.user.role !== "admin" &&
     note.createdBy.toString() !== req.user._id.toString()
@@ -125,7 +151,16 @@ router.patch("/:id", protect, validators.mongoId, asyncHandler(async (req, res) 
     req.params.id,
     { ...req.body, updatedBy: req.user._id },
     { new: true, runValidators: true }
-  );
+  )
+  .populate("companyId", "name")
+  .populate({
+    path: "meetingId",
+    select: "title companyId",
+    populate: {
+      path: "companyId",
+      select: "name"
+    }
+  });
 
   ApiResponse.success(res, updated, "Note updated");
 }));
@@ -137,7 +172,6 @@ router.patch("/:id/action-items/:itemId", protect, asyncHandler(async (req, res)
 
   if (!note) throw new AppError("Note not found", 404);
 
-  // ✅ SECURITY CHECK
   if (
     req.user.role !== "admin" &&
     note.createdBy.toString() !== req.user._id.toString()
@@ -163,7 +197,6 @@ router.patch("/:id/pin", protect, validators.mongoId, asyncHandler(async (req, r
 
   if (!note) throw new AppError("Note not found", 404);
 
-  // ✅ SECURITY CHECK
   if (
     req.user.role !== "admin" &&
     note.createdBy.toString() !== req.user._id.toString()
@@ -178,13 +211,12 @@ router.patch("/:id/pin", protect, validators.mongoId, asyncHandler(async (req, r
 }));
 
 
-// ── DELETE NOTE (SECURED) ───────────────────────────────────
+// ── DELETE NOTE ─────────────────────────────────────────────
 router.delete("/:id", protect, validators.mongoId, asyncHandler(async (req, res) => {
   const note = await Note.findById(req.params.id);
 
   if (!note) throw new AppError("Note not found", 404);
 
-  // ✅ SECURITY CHECK
   if (
     req.user.role !== "admin" &&
     note.createdBy.toString() !== req.user._id.toString()

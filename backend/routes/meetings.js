@@ -10,7 +10,7 @@ const ApiResponse = require("../utils/apiResponse");
 const logger = require("../utils/logger");
 
 // GET /api/meetings/stats/overview
-// FIXED: Now filters by the logged-in user and excludes soft-deleted items
+// UPDATED: Robust action item counting and user filtering
 router.get("/stats/overview", protect, asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
@@ -27,38 +27,45 @@ router.get("/stats/overview", protect, asyncHandler(async (req, res) => {
     Meeting.countDocuments({ ...userFilter, status: "ongoing" }),
     Meeting.countDocuments({ ...userFilter, status: "scheduled" }),
     Note.countDocuments(userFilter),
-    Recording.countDocuments(userFilter), // This will now correctly show 0 if you have no recordings
+    Recording.countDocuments(userFilter),
     Meeting.find(userFilter)
       .sort({ createdAt: -1 })
       .limit(5)
-      .select("title status createdAt priority"),
+      .select("title status createdAt priority company"),
   ]);
 
-  // meetings per status for chart
+  // Meetings per status for chart
   const meetingsByStatus = { 
     scheduled: scheduledMeetings, 
     ongoing: ongoingMeetings, 
     completed: completedMeetings 
   };
 
-  // notes by priority (Filtered by user)
+  // Notes by priority
   const [highNotes, medNotes, lowNotes] = await Promise.all([
     Note.countDocuments({ ...userFilter, priority: "high" }),
     Note.countDocuments({ ...userFilter, priority: "medium" }),
     Note.countDocuments({ ...userFilter, priority: "low" }),
   ]);
 
-  // action items completion rate (Filtered by user)
+  // --- ACTION ITEMS COMPLETION RATE (FIXED) ---
   const notesWithActions = await Note.find({ 
     ...userFilter, 
     "actionItems.0": { $exists: true } 
   }).select("actionItems");
 
   let totalActions = 0, doneActions = 0;
+
   notesWithActions.forEach(n => { 
-    totalActions += n.actionItems.length; 
-    doneActions += n.actionItems.filter(a => a.done).length; 
+    if (n.actionItems && Array.isArray(n.actionItems)) {
+      totalActions += n.actionItems.length; 
+      // Check for 'done' OR 'completed' status to match various schema styles
+      doneActions += n.actionItems.filter(a => a.done === true || a.completed === true).length; 
+    }
   });
+
+  // Log to backend console for verification
+  console.log(`[Stats] User: ${req.user.email} | Total Actions: ${totalActions} | Done: ${doneActions}`);
 
   ApiResponse.success(res, {
     counts: { 
@@ -84,7 +91,6 @@ router.get("/stats/overview", protect, asyncHandler(async (req, res) => {
 router.get("/", protect, asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, status, priority, search, sortBy = "createdAt", sortOrder = "desc", tags } = req.query;
   
-  // FIXED: Ensure users only see their own non-deleted meetings
   const filter = { createdBy: req.user._id, isDeleted: { $ne: true } };
   
   if (status) filter.status = status;
@@ -117,7 +123,6 @@ router.post("/", protect, validators.createMeeting, asyncHandler(async (req, res
 
 // GET /api/meetings/:id
 router.get("/:id", protect, validators.mongoId, asyncHandler(async (req, res) => {
-  // FIXED: Check ownership and isDeleted status
   const meeting = await Meeting.findOne({ _id: req.params.id, createdBy: req.user._id, isDeleted: { $ne: true } })
     .populate("createdBy", "name email avatar");
     
@@ -152,7 +157,6 @@ router.delete("/:id", protect, validators.mongoId, asyncHandler(async (req, res)
     isDeleted: true, deletedAt: new Date(), deletedBy: req.user._id,
   });
   
-  // soft-delete children too
   await Promise.all([
     Note.updateMany({ meetingId: req.params.id }, { isDeleted: true }),
     Recording.updateMany({ meetingId: req.params.id }, { isDeleted: true }),

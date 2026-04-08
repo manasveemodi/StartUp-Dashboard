@@ -11,8 +11,7 @@ import TopBar           from "../components/TopBar";
 const statusConf = {
   active:   { color:"#059669", bg:"#d1fae5", label:"Active"   },
   inactive: { color:"#6b7280", bg:"#f3f4f6", label:"Inactive" },
-  prospect: { color:"#d97706", bg:"#fef3c7", label:"Prospect" },
-  client:   { color:"#4f46e5", bg:"#ede9fe", label:"Client"   },
+ 
 };
 
 const INDUSTRIES = [
@@ -123,16 +122,33 @@ function CompanyForm({ initial={}, onSubmit, onCancel, saving }) {
 /* ── Company Card ── */
 function CompanyCard({ company, onDelete, onEdit }) {
   const navigate = useNavigate(); 
-  const { user } = useAuth();   // ✅ ADD THIS
+  const { user } = useAuth();
 
   const sc = statusConf[company.status] || statusConf.active;
+
+  // ✅ NEW STATE
+  const [statusOpen, setStatusOpen] = useState(false);
+
+  // ✅ UPDATE FUNCTION
+  const updateStatus = async (newStatus) => {
+    try {
+      await companiesAPI.update(company._id, {
+        ...company,
+        status: newStatus
+      });
+
+      setStatusOpen(false);
+      window.location.reload(); // simple refresh
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div
       className="card card-hover animate-fadeUp"
       onClick={() => navigate(`/companies/${company._id}`)}
-      style={{ display:"flex",flexDirection:"column",overflow:"hidden", cursor:"pointer" }}
-    >
+      style={{ display:"flex",flexDirection:"column",overflow:"hidden", cursor:"pointer" }}>
       <div style={{ height:3,background:sc.color }}/>
 
       <div style={{ padding:"16px 18px 12px" }}>
@@ -150,7 +166,6 @@ function CompanyCard({ company, onDelete, onEdit }) {
               </span>
             </div>
 
-            {/* ✅ CREATED BY */}
             <div style={{ fontSize:10, color:"var(--text-muted)", marginBottom:2 }}>
               Created by: {company.createdBy?.name || "You"}
             </div>
@@ -172,51 +187,9 @@ function CompanyCard({ company, onDelete, onEdit }) {
             {company.description}
           </p>
         )}
-
-        <div style={{ display:"flex",flexDirection:"column",gap:4 }}>
-          {company.email && (
-            <div style={{ display:"flex",alignItems:"center",gap:5 }}>
-              <Mail size={11} color="var(--text-muted)"/>
-              <span style={{ fontSize:11,color:"var(--text-muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>
-                {company.email}
-              </span>
-            </div>
-          )}
-
-          {company.phone && (
-            <div style={{ display:"flex",alignItems:"center",gap:5 }}>
-              <Phone size={11} color="var(--text-muted)"/>
-              <span style={{ fontSize:11,color:"var(--text-muted)" }}>
-                {company.phone}
-              </span>
-            </div>
-          )}
-
-          {company.website && (
-            <div style={{ display:"flex",alignItems:"center",gap:5 }}>
-              <Globe size={11} color="var(--text-muted)"/>
-              <span style={{ fontSize:11,color:"var(--text-muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>
-                {company.website}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {company.tags?.length>0 && (
-          <div style={{ display:"flex",flexWrap:"wrap",gap:4,marginTop:10 }}>
-            {company.tags.slice(0,3).map(t=>(
-              <span key={t} style={{
-                fontSize:10,padding:"2px 7px",borderRadius:99,
-                background:"var(--bg-elevated)",color:"var(--text-muted)",
-                border:"1px solid var(--border)"
-              }}>
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
+      {/* ✅ FOOTER */}
       <div style={{
         padding:"10px 18px",
         borderTop:"1px solid var(--border)",
@@ -226,16 +199,14 @@ function CompanyCard({ company, onDelete, onEdit }) {
         background:"var(--bg-elevated)"
       }}>
         
-        {/* ✅ ADMIN ONLY BUTTONS */}
-        <div style={{ display:"flex",gap:6 }}>
+        {/* ✅ ADMIN BUTTONS + DROPDOWN */}
+        <div style={{ display:"flex",gap:6, position:"relative" }}>
           {user?.role === "admin" && (
             <>
               <button
                 onClick={(e)=>{ e.stopPropagation(); onEdit(company); }}
                 className="btn btn-ghost btn-sm"
-                style={{ padding:"4px 8px",color:"var(--text-muted)",fontSize:11 }}
-                onMouseEnter={e=>{e.currentTarget.style.color="var(--accent)";e.currentTarget.style.background="var(--accent-soft)";}}
-                onMouseLeave={e=>{e.currentTarget.style.color="var(--text-muted)";e.currentTarget.style.background="transparent";}}
+                style={{ padding:"4px 8px",fontSize:11 }}
               >
                 <Edit3 size={12}/> Edit
               </button>
@@ -243,12 +214,52 @@ function CompanyCard({ company, onDelete, onEdit }) {
               <button
                 onClick={(e)=>{ e.stopPropagation(); onDelete(company._id); }}
                 className="btn btn-ghost btn-sm"
-                style={{ padding:"4px 8px",color:"var(--text-muted)",fontSize:11 }}
-                onMouseEnter={e=>{e.currentTarget.style.color="var(--rose)";e.currentTarget.style.background="var(--rose-soft)";}}
-                onMouseLeave={e=>{e.currentTarget.style.color="var(--text-muted)";e.currentTarget.style.background="transparent";}}
+                style={{ padding:"4px 8px",fontSize:11 }}
               >
                 <Trash2 size={12}/> Delete
               </button>
+
+              {/* ✅ STATUS DROPDOWN */}
+              <div style={{ position:"relative" }}>
+                <button
+                  onClick={(e)=>{ e.stopPropagation(); setStatusOpen(!statusOpen); }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ padding:"4px 8px",fontSize:11 }}
+                >
+                  Status ⌄
+                </button>
+
+                {statusOpen && (
+                  <div
+                    onClick={(e)=>e.stopPropagation()}
+                    style={{
+                      position:"absolute",
+                      top:"100%",
+                      right:0,
+                      background:"#fff",
+                      border:"1px solid var(--border)",
+                      borderRadius:6,
+                      boxShadow:"0 6px 16px rgba(0,0,0,0.15)",
+                      zIndex:100,
+                      minWidth:120
+                    }}
+                  >
+                    <div
+                      onClick={()=>updateStatus("active")}
+                      style={{ padding:"8px 10px",cursor:"pointer" }}
+                    >
+                      ✅ Active
+                    </div>
+
+                    <div
+                      onClick={()=>updateStatus("inactive")}
+                      style={{ padding:"8px 10px",cursor:"pointer" }}
+                    >
+                      ❌ Inactive
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

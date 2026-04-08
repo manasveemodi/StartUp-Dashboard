@@ -12,8 +12,6 @@ import TopBar           from "../components/TopBar";
 const statusConf = {
   active:   { color:"#059669", bg:"#d1fae5", label:"Active"   },
   inactive: { color:"#6b7280", bg:"#f3f4f6", label:"Inactive" },
-  prospect: { color:"#d97706", bg:"#fef3c7", label:"Prospect" },
-  client:   { color:"#4f46e5", bg:"#ede9fe", label:"Client"   },
 };
 
 function fmtTime(s) {
@@ -139,7 +137,7 @@ export default function CompanyList() {
           </div>
           <div style={{ display:"flex", gap:6 }}>
             <Filter size={13} color="var(--text-muted)" style={{ alignSelf:"center" }}/>
-            {["all","active","client","prospect","inactive"].map(f=>(
+            {["all","active","inactive"].map(f=>(
               <button key={f} onClick={()=>setStatusF(f)} className={`btn btn-sm ${statusF===f?"btn-primary":"btn-secondary"}`} style={{ textTransform:"capitalize" }}>{f}</button>
             ))}
           </div>

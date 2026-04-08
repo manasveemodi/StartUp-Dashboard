@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+// Change line 2 to:
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
   ArrowLeft, Building2, Plus, Mic, FileText,
   Trash2, Play, Pause, Square, RotateCcw, Upload,
   AlertCircle, Calendar, Clock, CheckCircle,
   Tag, Pin, PinOff, Edit3, X, Users, ChevronDown, ChevronRight,
-  Layers, Radio
+  Layers, Radio, Paperclip, FolderOpen, Download, File, FileImage, FileCode, FileSpreadsheet,
+  Link as LinkIcon, Globe, ExternalLink
 } from "lucide-react";
 import { companiesAPI, meetingsAPI, notesAPI, recordingsAPI } from "../utils/api";
+/* filesAPI is handled locally in this file via useFilesStore */
 import { useToast }       from "../context/ToastContext";
 import { useCompanyTime } from "../context/CompanyTimeContext";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
@@ -20,8 +23,91 @@ const fmtBytes = b => { if(!b)return"—"; const u=["B","KB","MB"],i=Math.floor(
 const fmtTotal = s => { if(!s)return"0m"; const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}m`:`${m}m`; };
 
 const statusConf  = { active:{color:"#059669",bg:"#d1fae5"}, inactive:{color:"#6b7280",bg:"#f3f4f6"}, prospect:{color:"#d97706",bg:"#fef3c7"}, client:{color:"#4f46e5",bg:"#ede9fe"} };
-const mStatusConf = { scheduled:{color:"#6366f1",bg:"#ede9fe"}, ongoing:{color:"#059669",bg:"#d1fae5"}, completed:{color:"#0891b2",bg:"#cffafe"}, cancelled:{color:"#e11d48",bg:"#ffe4e6"} };
+const mStatusConf = { scheduled:{color:"#6366f1",bg:"#ede9fe"}, ongoing:{color:"#059669",bg:"#d1fae5"}, completed:{color:"#0891b2",bg:"#cffafe"} };
 const prioConf    = { high:{color:"var(--rose)",bg:"var(--rose-soft)"}, medium:{color:"var(--amber)",bg:"var(--amber-soft)"}, low:{color:"var(--green)",bg:"var(--green-soft)"} };
+
+/* ════════════════════════════════════════════
+   STATUS DROPDOWN  (reusable pill-style)
+════════════════════════════════════════════ */
+const STATUS_OPTIONS = [
+  { value:"scheduled", label:"Scheduled", color:"#6366f1", bg:"#ede9fe", dot:"#6366f1" },
+  { value:"ongoing",   label:"Ongoing",   color:"#059669", bg:"#d1fae5", dot:"#059669" },
+  { value:"completed", label:"Completed", color:"#0891b2", bg:"#cffafe", dot:"#0891b2" },
+  
+];
+
+function StatusDropdown({ value, onChange, small=false }) {
+  const [open, setOpen] = useState(false);
+  const ref             = useRef(null);
+  const current         = STATUS_OPTIONS.find(o => o.value === value) || STATUS_OPTIONS[0];
+
+  /* close on outside click */
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position:"relative", display:"inline-block" }}>
+      {/* Trigger pill */}
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        style={{
+          display:"flex", alignItems:"center", gap:6,
+          padding: small ? "3px 8px 3px 7px" : "6px 10px 6px 9px",
+          borderRadius:999,
+          background: current.bg,
+          border:`1.5px solid ${current.color}30`,
+          cursor:"pointer",
+          fontSize: small ? 10 : 12,
+          fontWeight:700,
+          color: current.color,
+          whiteSpace:"nowrap",
+          transition:"all 0.15s",
+        }}
+      >
+        <span style={{ width: small?6:7, height: small?6:7, borderRadius:"50%", background:current.dot, flexShrink:0 }}/>
+        {current.label}
+        <ChevronDown size={small?10:12} style={{ marginLeft:1, opacity:0.7 }}/>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div style={{
+          position:"absolute", top:"calc(100% + 6px)", left:0, zIndex:999,
+          background:"var(--bg-card)", border:"1px solid var(--border)",
+          borderRadius:"var(--radius-sm)", boxShadow:"0 8px 24px rgba(0,0,0,0.12)",
+          minWidth:148, overflow:"hidden",
+        }}>
+          {STATUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={e => { e.stopPropagation(); onChange(opt.value); setOpen(false); }}
+              style={{
+                display:"flex", alignItems:"center", gap:9,
+                width:"100%", padding:"9px 13px",
+                background: value === opt.value ? opt.bg : "transparent",
+                border:"none", cursor:"pointer", textAlign:"left",
+                fontSize:12, fontWeight: value===opt.value ? 700 : 500,
+                color: value === opt.value ? opt.color : "var(--text-primary)",
+                transition:"background 0.12s",
+              }}
+              onMouseEnter={e => { if (value !== opt.value) e.currentTarget.style.background = "var(--bg-elevated)"; }}
+              onMouseLeave={e => { if (value !== opt.value) e.currentTarget.style.background = "transparent"; }}
+            >
+              <span style={{ width:8, height:8, borderRadius:"50%", background:opt.dot, flexShrink:0 }}/>
+              {opt.label}
+              {value === opt.value && <CheckCircle size={12} style={{ marginLeft:"auto" }} color={opt.color}/>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ════════════════════════════════════════════
    AUDIO PLAYER
@@ -210,6 +296,7 @@ function VoicePanel({ meetingId, onSaved, onClose }) {
 ════════════════════════════════════════════ */
 function NewMeetingModal({ companyId, onClose, onSaved }) {
   const toast   = useToast();
+  const navigate = useNavigate(); // Add this line here
   const lbl = { fontSize:11,fontWeight:700,color:"var(--text-muted)",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:"0.5px" };
 
   /* ── step state ── */
@@ -232,6 +319,7 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
           startRecording,pauseRecording,resumeRecording,stopRecording,resetRecording } = useVoiceRecorder();
   const [recLabel,    setRecLabel]    = useState("");
   const [savedBlobs,  setSavedBlobs]  = useState([]); // [{blob,label,duration}]
+  const [queuedFiles, setQueuedFiles] = useState([]); // [{file, label}]
 
   const queueRecording = () => {
     if (!audioBlob) return;
@@ -268,8 +356,32 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
         await recordingsAPI.upload(fd);
       }
 
+      // convert queued files to persistent entries and bubble up via onSaved
+      const newFileEntries = queuedFiles.map(qf => {
+        let objectUrl = null;
+        if (qf.base64) {
+          try {
+            const [header, data] = qf.base64.split(",");
+            const mime  = header.match(/:(.*?);/)?.[1] || "application/octet-stream";
+            const bytes = atob(data);
+            const arr   = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+            objectUrl = URL.createObjectURL(new Blob([arr], { type: mime }));
+          } catch {}
+        }
+        return {
+          id:        `${Date.now()}-${Math.random()}`,
+          meetingId: newId,
+          name:      qf.file.name,
+          size:      qf.file.size,
+          base64:    qf.base64 || null,
+          objectUrl,
+          createdAt: new Date().toISOString(),
+        };
+      });
+
       toast.success(`Meeting "${form.title}" created!`);
-      onSaved();
+      onSaved(newFileEntries);
     } catch { toast.error("Failed to create meeting."); }
     finally { setSaving(false); }
   };
@@ -284,6 +396,7 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
     { id:"details",   label:"Details",   icon:Building2, accent:"var(--accent)" },
     { id:"notes",     label:"Notes",     icon:FileText,  accent:"var(--amber)"  },
     { id:"recording", label:"Recording", icon:Mic,       accent:"var(--rose)"   },
+    { id:"files",     label:"Files",     icon:Paperclip, accent:"var(--teal)"   },
   ];
 
   return (
@@ -294,13 +407,52 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
       <div className="card animate-scaleIn" style={{ width:"100%",maxWidth:560,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"var(--shadow-xl)",overflow:"hidden" }}>
 
         {/* ── Modal header ── */}
-        <div style={{ padding:"15px 20px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0 }}>
-          <div>
-            <h2 style={{ fontSize:15,fontWeight:800,color:"var(--text-primary)",marginBottom:1 }}>New Meeting</h2>
-            <p style={{ fontSize:11,color:"var(--text-muted)" }}>Fill details, optionally add notes &amp; recordings before saving.</p>
-          </div>
-          <button onClick={onClose} className="btn btn-ghost btn-sm" style={{ padding:5 }}><X size={14}/></button>
-        </div>
+       {/* ── Modal header ── */}
+<div style={{ 
+  height: "72px",                  // Set a fixed height to prevent "jumping"
+  padding: "0 20px",               // Horizontal padding only
+  borderBottom: "1px solid var(--border)",
+  display: "flex", 
+  alignItems: "center",            // Vertically centers everything perfectly
+  justifyContent: "space-between",
+  flexShrink: 0,                   // CRITICAL: Prevents header from squishing
+  background: "var(--bg-card)"     // Ensures background is solid
+}}>
+  <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+    <h2 style={{ 
+      fontSize: 15, 
+      fontWeight: 800, 
+      color: "var(--text-primary)", 
+      margin: 0,                   // Reset margins to prevent clipping
+      lineHeight: 1.2 
+    }}>
+      New Meeting
+    </h2>
+    <p style={{ 
+      fontSize: 11, 
+      color: "var(--text-muted)", 
+      margin: 0,                   // Reset margins
+      lineHeight: 1.2 
+    }}>
+      Fill details, optionally add notes &amp; recordings.
+    </p>
+  </div>
+  
+  <button 
+    onClick={onClose} 
+    className="btn btn-ghost btn-sm" 
+    style={{ 
+      width: 32, 
+      height: 32, 
+      display: "flex", 
+      alignItems: "center", 
+      justifyContent: "center",
+      padding: 0 
+    }}
+  >
+    <X size={16}/>
+  </button>
+</div>
 
         {/* ── Tab nav ── */}
         <div style={{ display:"flex",borderBottom:"1px solid var(--border)",background:"var(--bg-elevated)",flexShrink:0 }}>
@@ -316,8 +468,9 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
             }}>
               <t.icon size={13}/>
               {t.label}
-              {t.id==="notes"     && notes.length>0      && <span style={{ fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:99,background:"var(--amber-soft)",color:"var(--amber)" }}>{notes.length}</span>}
-              {t.id==="recording" && savedBlobs.length>0 && <span style={{ fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:99,background:"var(--rose-soft)",color:"var(--rose)" }}>{savedBlobs.length}</span>}
+              {t.id==="notes"     && notes.length>0        && <span style={{ fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:99,background:"var(--amber-soft)",color:"var(--amber)" }}>{notes.length}</span>}
+              {t.id==="recording" && savedBlobs.length>0   && <span style={{ fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:99,background:"var(--rose-soft)",color:"var(--rose)" }}>{savedBlobs.length}</span>}
+              {t.id==="files"     && queuedFiles.length>0  && <span style={{ fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:99,background:"var(--teal-soft,#ccfbf1)",color:"var(--teal)" }}>{queuedFiles.length}</span>}
             </button>
           ))}
         </div>
@@ -349,11 +502,7 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
               <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
                 <div>
                   <label style={lbl}>Status</label>
-                  <select className="input" value={form.status} onChange={e=>set("status",e.target.value)}>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                  </select>
+                  <StatusDropdown value={form.status} onChange={v=>set("status",v)}/>
                 </div>
                 <div>
                   <label style={lbl}>Priority</label>
@@ -549,6 +698,77 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
               }
             </div>
           )}
+
+          {/* ════ FILES TAB ════ */}
+          {tab==="files" && (
+            <div>
+              {/* Inline file picker — no meetingId yet, just queue locally */}
+              {(()=>{
+                const ref = React.createRef();
+                return (
+                  <>
+                    <input ref={ref} type="file" multiple style={{ display:"none" }}
+                      onChange={async e=>{
+                        const picked = Array.from(e.target.files||[]);
+                        const withB64 = await Promise.all(picked.map(async f => {
+                          let base64 = null;
+                          try { base64 = await fileToBase64(f); } catch {}
+                          return { id:Date.now()+Math.random(), file:f, base64 };
+                        }));
+                        setQueuedFiles(q=>[...q,...withB64]);
+                        e.target.value="";
+                      }}
+                    />
+                    <div
+                      onClick={()=>ref.current?.click()}
+                      style={{ border:"2px dashed var(--teal,#0891b2)",borderRadius:"var(--radius-sm)",padding:"26px 20px",textAlign:"center",cursor:"pointer",background:"var(--teal-soft,#f0fdfa)",marginBottom:14,transition:"background 0.15s" }}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(8,145,178,0.1)"}
+                      onMouseLeave={e=>e.currentTarget.style.background="var(--teal-soft,#f0fdfa)"}
+                    >
+                      <div style={{ width:40,height:40,borderRadius:"50%",background:"#fff",border:"1.5px solid var(--teal,#0891b2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px" }}>
+                        <Paperclip size={17} color="var(--teal,#0891b2)"/>
+                      </div>
+                      <div style={{ fontSize:13,fontWeight:600,color:"var(--teal,#0891b2)",marginBottom:3 }}>Click to browse files</div>
+                      <div style={{ fontSize:11,color:"var(--text-muted)" }}>PDFs, images, spreadsheets, documents — any type</div>
+                    </div>
+                  </>
+                );
+              })()}
+
+              {queuedFiles.length===0
+                ? <div style={{ textAlign:"center",padding:"16px 0",color:"var(--text-muted)" }}>
+                    <Paperclip size={26} style={{ marginBottom:8,opacity:0.35 }}/>
+                    <p style={{ fontSize:12 }}>No files queued yet. Click above to attach files.</p>
+                    <p style={{ fontSize:11,marginTop:4 }}>Files will be uploaded when you click <strong>Create Meeting</strong>.</p>
+                  </div>
+                : <div style={{ display:"flex",flexDirection:"column",gap:7 }}>
+                    <p style={{ fontSize:11,color:"var(--text-muted)",marginBottom:2 }}>
+                      {queuedFiles.length} file{queuedFiles.length!==1?"s":""} queued — will be uploaded with the meeting
+                    </p>
+                    {queuedFiles.map((qf,i)=>{
+                      const Icon = fileIconFor(qf.file.name);
+                      const ac   = fileAccentFor(qf.file.name);
+                      return (
+                        <div key={qf.id} style={{ display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:"var(--radius-xs)",background:"var(--bg-elevated)",border:"1px solid var(--border)" }}>
+                          <div style={{ width:32,height:32,borderRadius:"var(--radius-xs)",background:ac.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                            <Icon size={14} color={ac.color}/>
+                          </div>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ fontSize:12,fontWeight:600,color:"var(--text-primary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{qf.file.name}</div>
+                            <div style={{ fontSize:10,color:"var(--text-muted)" }}>{fmtBytes(qf.file.size)}</div>
+                          </div>
+                          <button onClick={()=>setQueuedFiles(q=>q.filter((_,j)=>j!==i))}
+                            className="btn btn-ghost btn-sm" style={{ padding:"2px 4px",color:"var(--text-muted)",flexShrink:0 }}
+                            onMouseEnter={e=>e.currentTarget.style.color="var(--rose)"}
+                            onMouseLeave={e=>e.currentTarget.style.color="var(--text-muted)"}
+                          ><Trash2 size={11}/></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+            </div>
+          )}
         </div>
 
         {/* ── Footer: summary + Create ── */}
@@ -558,6 +778,7 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
             {form.title&&<span style={{ fontSize:11,color:"var(--text-primary)",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1 }}>📅 {form.title}</span>}
             {notes.length>0&&<span style={{ fontSize:11,color:"var(--amber)",fontWeight:600,flexShrink:0 }}>{notes.length} note{notes.length!==1?"s":""}</span>}
             {savedBlobs.length>0&&<span style={{ fontSize:11,color:"var(--rose)",fontWeight:600,flexShrink:0 }}>{savedBlobs.length} rec{savedBlobs.length!==1?"s":""}</span>}
+            {queuedFiles.length>0&&<span style={{ fontSize:11,color:"var(--teal,#0891b2)",fontWeight:600,flexShrink:0 }}>{queuedFiles.length} file{queuedFiles.length!==1?"s":""}</span>}
           </div>
           <div style={{ display:"flex",gap:8 }}>
             <button onClick={onClose} className="btn btn-secondary btn-lg" style={{ flex:1 }}>Cancel</button>
@@ -569,7 +790,7 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
             >
               {saving
                 ?<><div style={{ width:14,height:14,border:"2px solid rgba(255,255,255,0.4)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin 0.7s linear infinite" }}/>Creating…</>
-                :<><Calendar size={14}/>Create Meeting{notes.length+savedBlobs.length>0?` + ${notes.length+savedBlobs.length} item${notes.length+savedBlobs.length!==1?"s":""}`:""}</>
+                :<><Calendar size={14}/>Create Meeting{notes.length+savedBlobs.length+queuedFiles.length>0?` + ${notes.length+savedBlobs.length+queuedFiles.length} item${notes.length+savedBlobs.length+queuedFiles.length!==1?"s":""}`:""}</>
               }
             </button>
           </div>
@@ -581,19 +802,708 @@ function NewMeetingModal({ companyId, onClose, onSaved }) {
 }
 
 /* ════════════════════════════════════════════
+   FILE HELPERS
+════════════════════════════════════════════ */
+const fileIconFor = (name="") => {
+  const ext = name.split(".").pop().toLowerCase();
+  if (["jpg","jpeg","png","gif","webp","svg"].includes(ext)) return FileImage;
+  if (["js","ts","jsx","tsx","py","java","cpp","html","css","json"].includes(ext)) return FileCode;
+  if (["xls","xlsx","csv"].includes(ext)) return FileSpreadsheet;
+  if (["pdf"].includes(ext)) return File;
+  return Paperclip;
+};
+const fileAccentFor = (name="") => {
+  const ext = name.split(".").pop().toLowerCase();
+  if (["jpg","jpeg","png","gif","webp","svg"].includes(ext)) return { color:"var(--teal)",  bg:"var(--teal-soft)"  };
+  if (["js","ts","jsx","tsx","py","java","cpp","html","css","json"].includes(ext)) return { color:"var(--accent)", bg:"var(--accent-soft)" };
+  if (["xls","xlsx","csv"].includes(ext)) return { color:"var(--green)", bg:"var(--green-soft)" };
+  if (["pdf"].includes(ext)) return { color:"var(--rose)",   bg:"var(--rose-soft)"  };
+  return { color:"var(--amber)", bg:"var(--amber-soft)" };
+};
+
+/* ════════════════════════════════════════════
+   FILE PREVIEW MODAL — Enterprise grade
+════════════════════════════════════════════ */
+function FilePreviewModal({ file, onClose }) {
+  const name = file.name || file.originalName || file.filename || "File";
+  const url  = file.objectUrl || file.url || null;
+  const ext  = name.split(".").pop().toLowerCase();
+  const ac   = fileAccentFor(name);
+
+  const isImage = ["jpg","jpeg","png","gif","webp","svg"].includes(ext);
+  const isPdf   = ext === "pdf";
+  const isText  = ["txt","md","json","js","ts","jsx","tsx","py","html","css","csv"].includes(ext);
+
+  const [textContent, setTextContent] = useState(null);
+
+  useEffect(() => {
+    if (isText && url) {
+      fetch(url).then(r=>r.text()).then(setTextContent).catch(()=>setTextContent("Could not load file content."));
+    }
+  }, [url, isText]);
+
+  useEffect(() => {
+    const handler = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const Icon     = fileIconFor(name);
+  const lineCount = textContent ? textContent.split("\n").length : 0;
+
+  return (
+    <div
+      onClick={e => e.target === e.currentTarget && onClose()}
+      style={{
+        position:"fixed", inset:0, zIndex:4000,
+        background:"rgba(8,10,18,0.80)",
+        backdropFilter:"blur(10px) saturate(1.4)",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        padding:"28px 20px",
+      }}
+    >
+      <div style={{
+  width:"100%",
+  maxWidth: isImage ? 960 : 820,
+
+  minHeight:"60vh",
+  maxHeight:"90vh",
+
+  paddingTop: "80px",
+  display:"flex",
+  flexDirection:"column",
+
+  borderRadius:14,
+  overflow:"hidden",
+
+  background:"var(--bg-card,#ffffff)",
+  border:"1px solid var(--border)",
+}}>
+        {/* ══ TOPBAR ══ */}
+          <div style={{
+            height: "60px",          // Fixed height
+            minHeight: "60px",       // Force it to stay this size
+            flexShrink: 0,           // Prevents content below from squishing it
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "space-between", // Pushes download button to the right
+            padding: "0 16px",
+            background: "#f8f9fb",
+            zIndex: 10,              // Keeps it on top layer
+          }}>
+          {/* Icon badge */}
+          <div style={{
+            width:38, height:38, borderRadius:10,
+            background:ac.bg, border:`1.5px solid ${ac.color}30`,
+            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+          }}>
+            <Icon size={17} color={ac.color}/>
+          </div>
+
+          {/* Name + meta */}
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:"var(--text-primary)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", lineHeight:1.3 }}>
+              {name}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginTop:3, flexWrap:"wrap" }}>
+              {/* ext tag */}
+              <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.7px", textTransform:"uppercase", padding:"2px 7px", borderRadius:99, background:ac.bg, color:ac.color }}>
+                {ext}
+              </span>
+              {file.size && <span style={{ fontSize:11, color:"var(--text-muted)" }}>{fmtBytes(file.size)}</span>}
+              {file.createdAt && <span style={{ fontSize:11, color:"var(--text-muted)", fontFamily:"JetBrains Mono" }}>{format(new Date(file.createdAt),"MMM d, yyyy · HH:mm")}</span>}
+              {isText && lineCount > 0 && <span style={{ fontSize:11, color:"var(--text-muted)" }}>{lineCount} lines</span>}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ 
+              display:"flex", 
+              alignItems:"center", 
+              gap:8, 
+              flexShrink:0,
+              flexWrap:"wrap"   // 👈 ADD THIS
+            }}>    
+            {url && (
+              <a href={url} download={name} target="_blank" rel="noreferrer"
+                style={{
+                  display:"inline-flex", alignItems:"center", gap:6,
+                  padding:"7px 14px", borderRadius:8, textDecoration:"none",
+                  background:"var(--accent-soft)", color:"var(--accent)",
+                  border:"1px solid var(--accent)25",
+                  fontSize:12, fontWeight:600, transition:"all 0.15s",
+                }}
+                onMouseEnter={e=>{e.currentTarget.style.background="var(--accent)";e.currentTarget.style.color="#fff";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="var(--accent-soft)";e.currentTarget.style.color="var(--accent)";}}>
+                <Download size={13}/> Download
+              </a>
+            )}
+            <button onClick={onClose}
+              style={{
+                width:34, height:34, borderRadius:8,
+                border:"1px solid var(--border)", background:"var(--bg-card)",
+                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+                color:"var(--text-muted)", transition:"all 0.15s",
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background="var(--rose-soft,#fff1f2)";e.currentTarget.style.borderColor="var(--rose)";e.currentTarget.style.color="var(--rose)";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="var(--bg-card)";e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--text-muted)";}}>
+              <X size={15}/>
+            </button>
+          </div>
+        </div>
+
+        {/* ══ SCROLLABLE BODY ══ */}
+        <div style={{
+          flex:1, overflowY:"auto", overflowX:"hidden",
+          scrollbarWidth:"thin", scrollbarColor:"var(--border) transparent",paddingBottom: "20px"
+        }}>
+
+          {/* Image — checkered background like Figma */}
+          {isImage && url && (
+            <div style={{
+              display:"flex", alignItems:"flex-start", justifyContent:"center",
+              padding:"36px 36px 44px",
+              minHeight:"100%",
+              background:"repeating-conic-gradient(#e8eaed 0% 25%, #f5f6f8 0% 50%) 0 0 / 22px 22px",
+            }}>
+              <img src={url} alt={name} style={{
+                maxWidth:"100%", height:"auto", display:"block",
+                borderRadius:10,
+                boxShadow:"0 12px 48px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.06)",
+              }}/>
+            </div>
+          )}
+
+          {/* PDF */}
+          {isPdf && url && (
+            <iframe src={url} title={name}
+              style={{ width:"100%", height:"100%", minHeight:"calc(100vh - 200px)", border:"none", display:"block" }}
+            />
+          )}
+
+          {/* Text / Code — with line numbers */}
+          {isText && (
+            <div style={{ display:"flex", height:"100%", minHeight:400 }}>
+              {/* Line number gutter */}
+              {textContent && (
+                <div aria-hidden style={{
+                  flexShrink:0, width:56, paddingTop:24, paddingBottom:24,
+                  borderRight:"1px solid var(--border)",
+                  background:"var(--bg-elevated,#f8f9fb)",
+                  textAlign:"right", userSelect:"none", overflowY:"hidden",
+                }}>
+                  {textContent.split("\n").map((_,i)=>(
+                    <div key={i} style={{ fontSize:12, lineHeight:"1.85", paddingRight:14, color:"var(--text-muted)", fontFamily:"JetBrains Mono, monospace", opacity:0.55 }}>
+                      {i+1}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Code area */}
+              <div style={{ flex:1, padding:"24px 28px", overflowX:"auto" }}>
+                {textContent === null
+                  ? (
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:200, gap:10, color:"var(--text-muted)", fontSize:13 }}>
+                      <div style={{ width:20,height:20,border:"2.5px solid var(--border)",borderTopColor:"var(--accent)",borderRadius:"50%",animation:"spin 0.8s linear infinite" }}/>
+                      Loading file content…
+                    </div>
+                  )
+                  : (
+                    <pre style={{
+                      margin:0, padding:0,
+                      fontSize:13, lineHeight:1.85,
+                      color:"var(--text-primary)",
+                      fontFamily:"JetBrains Mono, 'Fira Code', 'Cascadia Code', monospace",
+                      whiteSpace:"pre-wrap", wordBreak:"break-word",
+                      background:"transparent",
+                    }}>
+                      {textContent}
+                    </pre>
+                  )
+                }
+              </div>
+            </div>
+          )}
+
+          {/* Unsupported */}
+          {!isImage && !isPdf && !isText && (
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:440, padding:52, textAlign:"center" }}>
+              <div style={{
+                width:84, height:84, borderRadius:22,
+                background:ac.bg, border:`2px solid ${ac.color}20`,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                marginBottom:24, boxShadow:`0 10px 28px ${ac.color}18`,
+              }}>
+                <Icon size={38} color={ac.color}/>
+              </div>
+              <span style={{ fontSize:10, fontWeight:800, letterSpacing:"0.7px", textTransform:"uppercase", color:ac.color, background:ac.bg, padding:"3px 10px", borderRadius:99, marginBottom:14 }}>
+                .{ext} file
+              </span>
+              <p style={{ fontSize:17, fontWeight:700, color:"var(--text-primary)", marginBottom:8, marginTop:0 }}>{name}</p>
+              <p style={{ fontSize:13, color:"var(--text-muted)", marginBottom:30, maxWidth:360, lineHeight:1.7, marginTop:0 }}>
+                This file type can't be previewed in the browser. Download it to open with the appropriate application on your device.
+              </p>
+              {url && (
+                <a href={url} download={name} target="_blank" rel="noreferrer"
+                  style={{
+                    display:"inline-flex", alignItems:"center", gap:8,
+                    padding:"12px 26px", borderRadius:10, textDecoration:"none",
+                    background:"var(--accent)", color:"#fff",
+                    fontSize:13, fontWeight:700,
+                    boxShadow:"0 4px 18px var(--accent)35",
+                    transition:"opacity 0.15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.opacity="0.87"}
+                  onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                  <Download size={15}/> Download File
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ══ STATUS BAR ══ */}
+        <div style={{
+          flexShrink:0, height:32,
+          borderTop:"1px solid var(--border)",
+          background:"var(--bg-elevated,#f8f9fb)",
+          display:"flex", alignItems:"center", padding:"0 20px", gap:16,
+        }}>
+          <span style={{ fontSize:10, color:"var(--text-muted)", display:"flex", alignItems:"center", gap:5 }}>
+            <span style={{ width:6,height:6,borderRadius:"50%",background:ac.color,display:"inline-block" }}/>
+            {isImage ? "Image Preview" : isPdf ? "PDF Viewer" : isText ? "Text Viewer" : "File Info"}
+          </span>
+          <span style={{ marginLeft:"auto", fontSize:10, color:"var(--text-muted)", display:"flex", alignItems:"center", gap:5 }}>
+            Press <kbd style={{ fontSize:9, padding:"1px 6px", borderRadius:4, border:"1px solid var(--border)", background:"var(--bg-card)", fontFamily:"monospace", letterSpacing:"0.3px" }}>Esc</kbd> to close
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ── File Card ── */
+function FileCard({ file, onDelete }) {
+  const [preview, setPreview] = useState(false);
+  const Icon = fileIconFor(file.name || file.originalName || file.filename || "");
+  const ac   = fileAccentFor(file.name || file.originalName || file.filename || "");
+  const displayName = file.name || file.originalName || file.filename || "Unknown file";
+  const downloadUrl = file.objectUrl || file.url || null;
+  return (
+    <>
+      <div
+        onClick={() => setPreview(true)}
+        style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:"var(--radius-sm)", background:"var(--bg-elevated)", border:"1px solid var(--border)", transition:"all 0.15s", cursor:"pointer" }}
+        onMouseEnter={e=>{ e.currentTarget.style.background="var(--bg-card-hover,#f8f9fa)"; e.currentTarget.style.borderColor="var(--accent)30"; }}
+        onMouseLeave={e=>{ e.currentTarget.style.background="var(--bg-elevated)"; e.currentTarget.style.borderColor="var(--border)"; }}
+      >
+        <div style={{ width:36,height:36,borderRadius:"var(--radius-xs)",background:ac.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+          <Icon size={16} color={ac.color}/>
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:12,fontWeight:600,color:"var(--text-primary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{displayName}</div>
+          <div style={{ fontSize:10,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:8,marginTop:2 }}>
+            {file.size && <span>{fmtBytes(file.size)}</span>}
+            {file.createdAt && <span style={{ fontFamily:"JetBrains Mono" }}>{format(new Date(file.createdAt),"MMM d · HH:mm")}</span>}
+            <span style={{ color:"var(--accent)",fontWeight:500 }}>Click to preview</span>
+          </div>
+        </div>
+        <div style={{ display:"flex",gap:4,flexShrink:0 }} onClick={e=>e.stopPropagation()}>
+          {downloadUrl && (
+            <a href={downloadUrl} download={displayName} target="_blank" rel="noreferrer"
+              className="btn btn-ghost btn-sm" style={{ padding:"3px 6px",color:"var(--text-muted)" }}
+              onMouseEnter={e=>{e.currentTarget.style.color="var(--accent)";e.currentTarget.style.background="var(--accent-soft)";}}
+              onMouseLeave={e=>{e.currentTarget.style.color="var(--text-muted)";e.currentTarget.style.background="transparent";}}>
+              <Download size={12}/>
+            </a>
+          )}
+          {onDelete && (
+            <button onClick={()=>onDelete(file.id||file._id)} className="btn btn-ghost btn-sm" style={{ padding:"3px 6px",color:"var(--text-muted)" }}
+              onMouseEnter={e=>{e.currentTarget.style.color="var(--rose)";e.currentTarget.style.background="var(--rose-soft)";}}
+              onMouseLeave={e=>{e.currentTarget.style.color="var(--text-muted)";e.currentTarget.style.background="transparent";}}>
+              <Trash2 size={12}/>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {preview && <FilePreviewModal file={file} onClose={()=>setPreview(false)}/>}
+    </>
+  );
+}
+
+/* ── Drop Zone — stores files locally, no API needed ── */
+function FileDropZone({ meetingId, onUploaded, compact=false }) {
+  const toast    = useToast();
+  const inputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+
+  const processFiles = async (rawFiles) => {
+    if (!rawFiles?.length) return;
+    const list = Array.from(rawFiles);
+    const newEntries = await Promise.all(list.map(async f => {
+      let base64 = null;
+      try { base64 = await fileToBase64(f); } catch {}
+      return {
+        id:        `${Date.now()}-${Math.random()}`,
+        meetingId,
+        name:      f.name,
+        size:      f.size,
+        base64,                                 // stored in localStorage
+        objectUrl: base64 ? URL.createObjectURL(
+          // rebuild blob from base64 for immediate use
+          (() => {
+            const [header, data] = base64.split(",");
+            const mime = header.match(/:(.*?);/)?.[1] || "application/octet-stream";
+            const bytes = atob(data);
+            const arr = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+            return new Blob([arr], { type: mime });
+          })()
+        ) : null,
+        createdAt: new Date().toISOString(),
+      };
+    }));
+    onUploaded?.(newEntries);
+    toast.success(`${list.length} file${list.length !== 1 ? "s" : ""} attached!`);
+  };
+
+  const onDrop = async e => {
+    e.preventDefault(); setDragging(false);
+    await processFiles(e.dataTransfer.files);
+  };
+
+  if (compact) return (
+    <div>
+      <input ref={inputRef} type="file" multiple style={{ display:"none" }}
+        onChange={async e=>{ await processFiles(e.target.files); e.target.value=""; }}/>
+      <button className="btn btn-sm" onClick={()=>inputRef.current?.click()}
+        style={{ width:"100%",justifyContent:"center",border:"1.5px dashed var(--border)",background:"var(--bg-elevated)",color:"var(--text-muted)",gap:6,marginBottom:10 }}
+        onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--teal,#0891b2)";e.currentTarget.style.color="var(--teal,#0891b2)";}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--text-muted)";}}>
+        <Paperclip size={12}/> Attach Files
+      </button>
+    </div>
+  );
+
+  return (
+    <div>
+      <input ref={inputRef} type="file" multiple style={{ display:"none" }}
+        onChange={async e=>{ await processFiles(e.target.files); e.target.value=""; }}/>
+      <div
+        onDragOver={e=>{e.preventDefault();setDragging(true);}}
+        onDragLeave={()=>setDragging(false)}
+        onDrop={onDrop}
+        onClick={()=>inputRef.current?.click()}
+        style={{
+          border:`2px dashed ${dragging?"var(--teal,#0891b2)":"var(--border)"}`,
+          borderRadius:"var(--radius-sm)", padding:"28px 20px", textAlign:"center",
+          cursor:"pointer", marginBottom:14, transition:"all 0.18s",
+          background: dragging ? "rgba(8,145,178,0.07)" : "var(--bg-elevated)",
+        }}
+      >
+        <div style={{ width:42,height:42,borderRadius:"50%",background:"var(--bg-base)",border:`1.5px solid ${dragging?"var(--teal,#0891b2)":"var(--border)"}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px" }}>
+          <Paperclip size={18} color={dragging?"var(--teal,#0891b2)":"var(--text-muted)"}/>
+        </div>
+        <div style={{ fontSize:13,fontWeight:600,color:dragging?"var(--teal,#0891b2)":"var(--text-primary)",marginBottom:4 }}>
+          {dragging ? "Drop files here" : "Click to browse or drag & drop"}
+        </div>
+        <div style={{ fontSize:11,color:"var(--text-muted)" }}>
+          PDFs, images, spreadsheets, documents — any file type
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════
+   LINK CARD
+════════════════════════════════════════════ */
+function LinkCard({ link, onDelete }) {
+  const lt = linkTypeFor(link.url);
+  const displayUrl = link.url.replace(/^https?:\/\/(www\.)?/, "").slice(0, 60) + (link.url.length > 70 ? "…" : "");
+  return (
+    <div
+      style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:"var(--radius-sm)", background:"var(--bg-elevated)", border:"1px solid var(--border)", transition:"all 0.15s" }}
+      onMouseEnter={e=>{ e.currentTarget.style.background="var(--bg-card-hover,#f8f9fa)"; e.currentTarget.style.borderColor=lt.color+"40"; }}
+      onMouseLeave={e=>{ e.currentTarget.style.background="var(--bg-elevated)"; e.currentTarget.style.borderColor="var(--border)"; }}
+    >
+      {/* Icon */}
+      <div style={{ width:34, height:34, borderRadius:"var(--radius-xs)", background:lt.bg, border:`1.5px solid ${lt.color}25`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <Globe size={15} color={lt.color}/>
+      </div>
+
+      {/* Info */}
+<div style={{ flex:1, minWidth:0 }}>
+  {link.label && (
+    <div style={{ fontSize:12, fontWeight:700, color:"var(--text-primary)", marginBottom:2 }}>
+      {link.label}
+    </div>
+  )}
+
+  {/* ✅ FIXED ANCHOR TAG */}
+  <a
+    href={link.url}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      fontSize:11,
+      color:"#2563eb",
+      textDecoration:"underline",
+      wordBreak:"break-all",
+      whiteSpace:"normal",
+      overflowWrap:"anywhere",
+      display:"block",
+    }}
+  >
+    {link.url}
+  </a>
+
+  <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
+    <span style={{
+      fontSize:9,
+      fontWeight:800,
+      letterSpacing:"0.5px",
+      textTransform:"uppercase",
+      padding:"1px 6px",
+      borderRadius:99,
+      background:lt.bg,
+      color:lt.color
+    }}>
+      {lt.label}
+    </span>
+
+    {link.createdAt && (
+      <span style={{ fontSize:10, color:"var(--text-muted)", fontFamily:"JetBrains Mono" }}>
+        {format(new Date(link.createdAt), "MMM d · HH:mm")}
+      </span>
+    )}
+  </div>
+</div>
+
+      {/* Actions */}
+      <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+        <a
+          href={link.url} target="_blank" rel="noreferrer"
+          className="btn btn-ghost btn-sm"
+          style={{ padding:"3px 6px", color:"var(--text-muted)", display:"flex", alignItems:"center" }}
+          onMouseEnter={e=>{ e.currentTarget.style.color="var(--accent)"; e.currentTarget.style.background="var(--accent-soft)"; }}
+          onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-muted)"; e.currentTarget.style.background="transparent"; }}
+          title="Open in new tab"
+        >
+          <ExternalLink size={12}/>
+        </a>
+        {onDelete && (
+          <button onClick={()=>onDelete(link.id)} className="btn btn-ghost btn-sm" style={{ padding:"3px 6px", color:"var(--text-muted)" }}
+            onMouseEnter={e=>{ e.currentTarget.style.color="var(--rose)"; e.currentTarget.style.background="var(--rose-soft)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-muted)"; e.currentTarget.style.background="transparent"; }}>
+            <Trash2 size={12}/>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════
+   FILES TAB PANEL  — two sections side by side
+   LEFT:  File upload (existing, unchanged)
+   RIGHT: Link manager (new)
+════════════════════════════════════════════ */
+function FilesTabPanel({ meetings, allFiles, onFilesChange, allLinks, onLinksChange }) {
+  const [selectedMtg, setSelectedMtg] = useState(meetings[0]?._id || "");
+
+  /* file helpers */
+  const visibleFiles = allFiles
+    .filter(f => f.meetingId === selectedMtg)
+    .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const handleUploaded = (newEntries) => onFilesChange(prev => [...prev, ...newEntries]);
+  const handleDeleteFile = (id) => onFilesChange(prev => prev.filter(f => f.id !== id));
+
+  /* link helpers */
+  const visibleLinks = allLinks
+    .filter(l => l.meetingId === selectedMtg)
+    .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const [linkUrl,   setLinkUrl]   = useState("");
+  const [linkLabel, setLinkLabel] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const toast = useToast();
+
+  const addLink = () => {
+    const trimmed = linkUrl.trim();
+    if (!trimmed) { setLinkError("Please enter a URL"); return; }
+    const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try { new URL(withProto); } catch { setLinkError("Invalid URL — please check the format"); return; }
+    if (!selectedMtg) { setLinkError("Select a meeting first"); return; }
+    onLinksChange(prev => [...prev, {
+      id:        `lnk-${Date.now()}-${Math.random()}`,
+      meetingId: selectedMtg,
+      url:       withProto,
+      label:     linkLabel.trim() || "",
+      createdAt: new Date().toISOString(),
+    }]);
+    setLinkUrl(""); setLinkLabel(""); setLinkError("");
+    toast.success("Link saved!");
+  };
+
+  const lbl = { fontSize:11, fontWeight:700, color:"var(--text-muted)", display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.5px" };
+
+  return (
+    <div style={{ padding:18 }}>
+
+      {/* ── Meeting picker (full width) ── */}
+      <div style={{ marginBottom:18, padding:"12px 14px", borderRadius:"var(--radius-sm)", background:"var(--bg-elevated)", border:"1px solid var(--border)" }}>
+        <label style={lbl}>Select Meeting</label>
+        {meetings.length === 0
+          ? <p style={{ fontSize:12, color:"var(--text-muted)", margin:0 }}>No meetings yet — create one first.</p>
+          : <div style={{ position:"relative" }}>
+              <Calendar size={12} color="var(--text-muted)" style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}/>
+              <select className="input" value={selectedMtg} onChange={e => setSelectedMtg(e.target.value)} style={{ paddingLeft:30, fontSize:13 }}>
+                {meetings.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
+              </select>
+            </div>
+        }
+      </div>
+
+      {/* ── Two-column body ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, alignItems:"start" }}>
+
+        {/* ════ LEFT: FILES ════ */}
+        <div>
+          {/* Section header */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, paddingBottom:10, borderBottom:"1px solid var(--border)" }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:"var(--teal-soft,#f0fdfa)", border:"1px solid var(--teal,#0891b2)20", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Paperclip size={13} color="var(--teal,#0891b2)"/>
+            </div>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>Uploaded Files</div>
+              <div style={{ fontSize:10, color:"var(--text-muted)" }}>{visibleFiles.length} file{visibleFiles.length!==1?"s":""} attached</div>
+            </div>
+          </div>
+
+          {/* Drop zone */}
+          {selectedMtg && <FileDropZone meetingId={selectedMtg} onUploaded={handleUploaded}/>}
+
+          {/* Files list */}
+          {!selectedMtg
+            ? <div style={{ textAlign:"center", padding:"28px 0" }}>
+                <FolderOpen size={28} color="var(--text-muted)" style={{ marginBottom:8, opacity:0.5 }}/>
+                <p style={{ fontSize:12, color:"var(--text-muted)" }}>Select a meeting to manage files.</p>
+              </div>
+            : visibleFiles.length === 0
+              ? <div style={{ textAlign:"center", padding:"24px 0", border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)", background:"var(--bg-elevated)" }}>
+                  <Paperclip size={24} color="var(--text-muted)" style={{ marginBottom:6, opacity:0.4 }}/>
+                  <p style={{ fontSize:12, color:"var(--text-muted)", margin:0 }}>No files yet.</p>
+                  <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:3 }}>Use the drop zone above.</p>
+                </div>
+              : <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                  {visibleFiles.map(f => <FileCard key={f.id} file={f} onDelete={handleDeleteFile}/>)}
+                </div>
+          }
+        </div>
+
+        {/* ════ RIGHT: LINKS ════ */}
+        <div>
+          {/* Section header */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, paddingBottom:10, borderBottom:"1px solid var(--border)" }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:"#ede9fe", border:"1px solid #4f46e520", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <LinkIcon size={13} color="#4f46e5"/>
+            </div>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>Saved Links</div>
+              <div style={{ fontSize:10, color:"var(--text-muted)" }}>{visibleLinks.length} link{visibleLinks.length!==1?"s":""} saved</div>
+            </div>
+          </div>
+
+          {/* Add link form */}
+          <div style={{ padding:12, borderRadius:"var(--radius-sm)", background:"var(--bg-elevated)", border:"1px solid var(--border)", marginBottom:14 }}>
+            <div style={{ marginBottom:8 }}>
+              <label style={{ ...lbl, marginBottom:4 }}>Label (optional)</label>
+              <input
+                className="input"
+                value={linkLabel}
+                onChange={e => setLinkLabel(e.target.value)}
+                placeholder="e.g. Project Brief, Drive Folder…"
+                style={{ fontSize:12 }}
+              />
+            </div>
+            <div style={{ marginBottom:linkError ? 6 : 10 }}>
+              <label style={{ ...lbl, marginBottom:4 }}>URL <span style={{ color:"var(--rose)" }}>*</span></label>
+              <div style={{ position:"relative" }}>
+                <Globe size={12} color="var(--text-muted)" style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}/>
+                <input
+                  className="input"
+                  value={linkUrl}
+                  onChange={e => { setLinkUrl(e.target.value); setLinkError(""); }}
+                  onKeyDown={e => e.key === "Enter" && addLink()}
+                  placeholder="https://drive.google.com/… or any URL"
+                  style={{ paddingLeft:30, fontSize:12, ...(linkError ? { borderColor:"var(--rose)", boxShadow:"0 0 0 3px var(--rose-soft)" } : {}) }}
+                />
+              </div>
+              {linkError && <p style={{ fontSize:11, color:"var(--rose)", marginTop:4, marginBottom:0 }}>{linkError}</p>}
+            </div>
+            <button
+              onClick={addLink}
+              disabled={!selectedMtg}
+              className="btn btn-sm"
+              style={{ width:"100%", justifyContent:"center", background:"#4f46e5", color:"#fff", border:"none", gap:6 }}
+              onMouseEnter={e => e.currentTarget.style.opacity="0.88"}
+              onMouseLeave={e => e.currentTarget.style.opacity="1"}
+            >
+              <LinkIcon size={12}/> Save Link
+            </button>
+          </div>
+
+          {/* Links list */}
+          {!selectedMtg
+            ? <div style={{ textAlign:"center", padding:"28px 0" }}>
+                <Globe size={28} color="var(--text-muted)" style={{ marginBottom:8, opacity:0.5 }}/>
+                <p style={{ fontSize:12, color:"var(--text-muted)" }}>Select a meeting to manage links.</p>
+              </div>
+            : visibleLinks.length === 0
+              ? <div style={{ textAlign:"center", padding:"24px 0", border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)", background:"var(--bg-elevated)" }}>
+                  <LinkIcon size={24} color="var(--text-muted)" style={{ marginBottom:6, opacity:0.4 }}/>
+                  <p style={{ fontSize:12, color:"var(--text-muted)", margin:0 }}>No links yet.</p>
+                  <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:3 }}>Paste any URL above.</p>
+                </div>
+              : <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                  {visibleLinks.map(l => (
+                    <LinkCard
+                      key={l.id} link={l}
+                      onDelete={id => onLinksChange(prev => prev.filter(x => x.id !== id))}
+                    />
+                  ))}
+                </div>
+          }
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════
    EXPANDED MEETING ROW  (notes + recordings inline)
 ════════════════════════════════════════════ */
-function MeetingRow({ meeting, notes, recordings, onNoteDelete, onNoteEdit, onNotePin, onRecDelete, onReload, companyId }) {
+function MeetingRow({ meeting, notes, recordings, files, onNoteDelete, onNoteEdit, onNotePin, onRecDelete, onFilesChange, onDelete, onStatusChange, onReload, companyId }) {
   const [open,       setOpen]       = useState(false);
-  const [innerTab,   setInnerTab]   = useState("notes");   // "notes" | "recordings"
+  const [innerTab,   setInnerTab]   = useState("notes");   // "notes" | "recordings" | "files"
   const [showNote,   setShowNote]   = useState(false);
   const [editNote,   setEditNote]   = useState(null);
   const [showRec,    setShowRec]    = useState(false);
 
-  const ms      = mStatusConf[meeting.status] || mStatusConf.scheduled;
   const pc      = prioConf[meeting.priority]  || prioConf.medium;
   const nCount  = notes.length;
   const rCount  = recordings.length;
+  const fCount  = (files||[]).length;
 
   const sortedNotes = [...notes].sort((a,b)=>(b.isPinned?1:0)-(a.isPinned?1:0)||new Date(b.createdAt)-new Date(a.createdAt));
 
@@ -620,13 +1530,28 @@ function MeetingRow({ meeting, notes, recordings, onNoteDelete, onNoteEdit, onNo
             <span style={{ fontSize:10,color:"var(--text-muted)",fontFamily:"JetBrains Mono" }}>{format(new Date(meeting.createdAt),"MMM d, yyyy · HH:mm")}</span>
             {nCount > 0 && <span style={{ fontSize:10,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:3 }}><FileText size={9}/>{nCount} note{nCount!==1?"s":""}</span>}
             {rCount > 0 && <span style={{ fontSize:10,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:3 }}><Mic size={9}/>{rCount} rec{rCount!==1?"s":""}</span>}
+            {fCount > 0 && <span style={{ fontSize:10,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:3 }}><Paperclip size={9}/>{fCount} file{fCount!==1?"s":""}</span>}
           </div>
         </div>
 
-        {/* Badges */}
+        {/* Status dropdown + Priority badge + Delete */}
         <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }} onClick={e=>e.stopPropagation()}>
+          <StatusDropdown
+            value={meeting.status}
+            onChange={v => onStatusChange?.(meeting._id, v)}
+            small
+          />
           <span className="badge" style={{ background:pc.bg,color:pc.color,fontSize:9 }}>{meeting.priority}</span>
-          <span className="badge" style={{ background:ms.bg,color:ms.color,fontSize:9 }}>{meeting.status}</span>
+          <button
+            onClick={() => onDelete?.(meeting._id)}
+            className="btn btn-ghost btn-sm"
+            style={{ padding:"3px 5px", color:"var(--text-muted)" }}
+            title="Delete meeting"
+            onMouseEnter={e=>{e.currentTarget.style.color="var(--rose)";e.currentTarget.style.background="var(--rose-soft)";}}
+            onMouseLeave={e=>{e.currentTarget.style.color="var(--text-muted)";e.currentTarget.style.background="transparent";}}
+          >
+            <Trash2 size={13}/>
+          </button>
         </div>
       </div>
 
@@ -639,8 +1564,9 @@ function MeetingRow({ meeting, notes, recordings, onNoteDelete, onNoteEdit, onNo
             {/* Inner tabs: Notes / Recordings */}
             <div style={{ display:"flex", gap:0, border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", overflow:"hidden", background:"var(--bg-base)" }}>
               {[
-                { id:"notes",      label:`Notes (${nCount})`,      icon:FileText },
-                { id:"recordings", label:`Recordings (${rCount})`, icon:Mic      },
+                { id:"notes",      label:`Notes (${nCount})`,      icon:FileText  },
+                { id:"recordings", label:`Recordings (${rCount})`, icon:Mic       },
+                { id:"files",      label:`Files (${fCount})`,      icon:Paperclip },
               ].map(t => (
                 <button key={t.id} onClick={()=>setInnerTab(t.id)} style={{ display:"flex",alignItems:"center",gap:5,padding:"6px 12px",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:innerTab===t.id?700:400,color:innerTab===t.id?"var(--accent-text)":"var(--text-muted)",background:innerTab===t.id?"var(--accent-soft)":"transparent",transition:"all 0.15s",borderRight:"1px solid var(--border)" }}>
                   <t.icon size={11}/>{t.label}
@@ -663,6 +1589,13 @@ function MeetingRow({ meeting, notes, recordings, onNoteDelete, onNoteEdit, onNo
                 onClick={()=>{ setShowRec(r=>!r); setInnerTab("recordings"); }}
               >
                 <Mic size={11}/>{showRec?"Hide Recorder":"Record"}
+              </button>
+              <button
+                className="btn btn-sm"
+                style={{ background:"var(--teal-soft)",color:"var(--teal)",border:"1px solid var(--teal)",gap:5 }}
+                onClick={()=>setInnerTab("files")}
+              >
+                <Paperclip size={11}/> Files
               </button>
             </div>
           </div>
@@ -707,6 +1640,33 @@ function MeetingRow({ meeting, notes, recordings, onNoteDelete, onNoteEdit, onNo
               : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                   {recordings.map(r=><AudioPlayer key={r._id} recording={r} onDelete={onRecDelete}/>)}
                 </div>
+          )}
+
+          {/* Files panel */}
+          {innerTab==="files" && (
+            <div>
+              <FileDropZone
+                meetingId={meeting._id}
+                onUploaded={newEntries => onFilesChange(prev => [...prev, ...newEntries])}
+                compact
+              />
+              {(files||[]).length === 0
+                ? <div style={{ textAlign:"center",padding:"20px 0" }}>
+                    <Paperclip size={22} color="var(--text-muted)" style={{ marginBottom:7,opacity:0.5 }}/>
+                    <p style={{ fontSize:12,color:"var(--text-muted)" }}>No files attached yet. Use the button above.</p>
+                  </div>
+                : <div style={{ display:"flex",flexDirection:"column",gap:7,marginTop:10 }}>
+                    <div style={{ fontSize:11,color:"var(--text-muted)",marginBottom:2 }}>
+                      {(files||[]).length} file{(files||[]).length!==1?"s":""} attached
+                    </div>
+                    {(files||[]).map(f=>(
+                      <FileCard key={f.id} file={f}
+                        onDelete={id => onFilesChange(prev => prev.filter(x => x.id !== id))}
+                      />
+                    ))}
+                  </div>
+              }
+            </div>
           )}
         </div>
       )}
@@ -1049,6 +2009,77 @@ function RecordingsTabPanel({ meetings, allRecordings, onDelete, onReload }) {
 }
 
 /* ════════════════════════════════════════════
+   FILE PERSISTENCE — localStorage keyed by companyId
+   Stores file metadata + base64 data so files
+   survive navigation and page refresh.
+════════════════════════════════════════════ */
+const FILES_KEY = (companyId) => `crm_files_${companyId}`;
+
+/* Convert a File object → base64 string */
+const fileToBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload  = () => resolve(reader.result); // data:mime;base64,...
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
+});
+
+/* Save full file list for a company to localStorage */
+const persistFiles = (companyId, entries) => {
+  try {
+    // Only persist serialisable fields — objectUrl is regenerated from base64
+    const serialisable = entries.map(({ objectUrl, ...rest }) => rest);
+    localStorage.setItem(FILES_KEY(companyId), JSON.stringify(serialisable));
+  } catch (e) {
+    console.warn("File persistence failed (storage full?):", e);
+  }
+};
+
+/* Load saved files and restore objectUrls from base64 */
+const loadPersistedFiles = (companyId) => {
+  try {
+    const raw = localStorage.getItem(FILES_KEY(companyId));
+    if (!raw) return [];
+    const entries = JSON.parse(raw);
+    return entries.map(entry => {
+      // Rebuild the blob URL from stored base64 so download/preview works
+      let objectUrl = null;
+      if (entry.base64) {
+        try {
+          const [header, data] = entry.base64.split(",");
+          const mime  = header.match(/:(.*?);/)?.[1] || "application/octet-stream";
+          const bytes = atob(data);
+          const arr   = new Uint8Array(bytes.length);
+          for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+          const blob  = new Blob([arr], { type: mime });
+          objectUrl   = URL.createObjectURL(blob);
+        } catch {}
+      }
+      return { ...entry, objectUrl };
+    });
+  } catch (e) {
+    return [];
+  }
+};
+
+/* ════════════════════════════════════════════
+   LINK PERSISTENCE — localStorage keyed by companyId
+════════════════════════════════════════════ */
+const LINKS_KEY          = (companyId) => `crm_links_${companyId}`;
+const persistLinks       = (companyId, entries) => { try { localStorage.setItem(LINKS_KEY(companyId), JSON.stringify(entries)); } catch {} };
+const loadPersistedLinks = (companyId) => { try { const r = localStorage.getItem(LINKS_KEY(companyId)); return r ? JSON.parse(r) : []; } catch { return []; } };
+
+/* Detect link type for badge colouring */
+const linkTypeFor = (url="") => {
+  if (/drive\.google\.com/i.test(url))  return { label:"Drive",  color:"#059669", bg:"#d1fae5" };
+  if (/docs\.google\.com/i.test(url))   return { label:"Docs",   color:"#4f46e5", bg:"#ede9fe" };
+  if (/sheets\.google\.com/i.test(url)) return { label:"Sheets", color:"#0891b2", bg:"#cffafe" };
+  if (/slides\.google\.com/i.test(url)) return { label:"Slides", color:"#d97706", bg:"#fef3c7" };
+  if (/youtube\.com|youtu\.be/i.test(url)) return { label:"YouTube", color:"#e11d48", bg:"#ffe4e6" };
+  if (/github\.com/i.test(url))         return { label:"GitHub", color:"#374151", bg:"#f3f4f6" };
+  return { label:"Link", color:"#6366f1", bg:"#ede9fe" };
+};
+
+/* ════════════════════════════════════════════
    MAIN PAGE
 ════════════════════════════════════════════ */
 export default function MeetingWorkspace() {
@@ -1060,7 +2091,29 @@ export default function MeetingWorkspace() {
   const [meetings,   setMeetings]   = useState([]);
   const [notes,      setNotes]      = useState([]);
   const [recordings, setRecordings] = useState([]);
+  /* Files: initialise from localStorage so they survive navigation */
+  const [files, setFilesState] = useState(() => loadPersistedFiles(companyId));
+  /* Links: initialise from localStorage so they survive navigation */
+  const [links, setLinksState] = useState(() => loadPersistedLinks(companyId));
   const [loading,    setLoading]    = useState(true);
+
+  /* Wrapper: always keep localStorage in sync when files change */
+  const setFiles = useCallback((updater) => {
+    setFilesState(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      persistFiles(companyId, next);
+      return next;
+    });
+  }, [companyId]);
+
+  /* Wrapper: always keep localStorage in sync when links change */
+  const setLinks = useCallback((updater) => {
+    setLinksState(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      persistLinks(companyId, next);
+      return next;
+    });
+  }, [companyId]);
 
   /* Top-level nav: "meetings" | "notes" | "recordings" */
   const [topTab, setTopTab] = useState("meetings");
@@ -1074,9 +2127,10 @@ export default function MeetingWorkspace() {
       if (r.data && r.data.data) {
         const { company:c, meetings:m, notes:n, recordings:rec } = r.data.data;
         setCompany(c);
-        setMeetings(m  || []);
-        setNotes(n     || []);
+        setMeetings(m   || []);
+        setNotes(n      || []);
         setRecordings(rec || []);
+        // Note: files are stored in local state only — not reset on reload
       }
     } catch (error) {
       console.error("Error loading workspace:", error);
@@ -1090,13 +2144,14 @@ export default function MeetingWorkspace() {
     return () => { leaveCompany(); };
   }, [company?._id]);
 
-  const delNote = async id => { if(!window.confirm("Delete this note?")) return; await notesAPI.delete(id); toast.success("Deleted"); load(); };
-  const delRec  = async id => { if(!window.confirm("Delete this recording?")) return; await recordingsAPI.delete(id); toast.success("Deleted"); load(); };
-  const pinNote = async id => { await notesAPI.togglePin(id); load(); };
+  const delNote    = async id => { if(!window.confirm("Delete this note?")) return; await notesAPI.delete(id); toast.success("Deleted"); load(); };
+  const delRec     = async id => { if(!window.confirm("Delete this recording?")) return; await recordingsAPI.delete(id); toast.success("Deleted"); load(); };
+  const delMeeting = async id => { if(!window.confirm("Delete this meeting? All its notes and recordings will also be removed.")) return; await meetingsAPI.delete(id); toast.success("Meeting deleted"); load(); };
+  const updateMeetingStatus = async (id, status) => { try { await meetingsAPI.update(id,{status}); load(); } catch { toast.error("Failed to update status"); } };
+  const pinNote    = async id => { await notesAPI.togglePin(id); load(); };
 
-  /* Sort all notes/recordings for global tabs */
-  const allNotes      = [...notes].sort((a,b)=>(b.isPinned?1:0)-(a.isPinned?1:0)||new Date(b.createdAt)-new Date(a.createdAt));
-  const allRecordings = [...recordings].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  /* Sort all notes for global tab */
+  const allNotes = [...notes].sort((a,b)=>(b.isPinned?1:0)-(a.isPinned?1:0)||new Date(b.createdAt)-new Date(a.createdAt));
 
   /* Loading */
   if (loading) return (
@@ -1118,20 +2173,21 @@ export default function MeetingWorkspace() {
 
   /* ── Nav tabs config ── */
   const NAV_TABS = [
-    { id:"meetings",   label:"Meetings",   icon:Calendar, count:meetings.length,   accent:"var(--accent)" },
-    { id:"notes",      label:"Notes",      icon:FileText, count:notes.length,      accent:"var(--amber)"  },
-    { id:"recordings", label:"Recordings", icon:Mic,      count:recordings.length, accent:"var(--rose)"   },
+    { id:"meetings",   label:"Meetings",   icon:Calendar,  count:meetings.length,   accent:"var(--accent)" },
+    { id:"notes",      label:"Notes",      icon:FileText,  count:notes.length,      accent:"var(--amber)"  },
+    { id:"recordings", label:"Recordings", icon:Mic,       count:recordings.length, accent:"var(--rose)"   },
+    { id:"files",      label:"Files",      icon:Paperclip, count:files.length + links.length, accent:"var(--teal,#0891b2)" },
   ];
 
   return (
     <div style={{ background:"var(--bg-base)", minHeight:"100vh" }}>
       <TopBar
         title={company.name}
-        subtitle={`${company.industry||"Company"} · ${meetings.length} meetings · ${notes.length} notes · Total time: ${fmtTotal(liveTotal||(company.totalTimeSpent||0))}`}
+        subtitle={`${company.industry||"Company"} · ${meetings.length} meetings · ${notes.length} notes`}
       />
 
       <div style={{ maxWidth:960, margin:"0 auto", padding:"20px 24px 60px" }}>
-        <Link to="/meetings" className="btn btn-ghost btn-sm" style={{ marginBottom:20, display:"inline-flex" }}>
+        <Link to="/companies" className="btn btn-ghost btn-sm" style={{ marginBottom:20, display:"inline-flex" }}>
           <ArrowLeft size={13}/> All Companies
         </Link>
 
@@ -1211,9 +2267,13 @@ export default function MeetingWorkspace() {
                       meeting={m}
                       notes={notes.filter(n=>n.meetingId===m._id)}
                       recordings={recordings.filter(r=>r.meetingId===m._id)}
+                      files={files.filter(f=>f.meetingId===m._id)}
                       onNoteDelete={delNote}
                       onNotePin={pinNote}
                       onRecDelete={delRec}
+                      onFilesChange={setFiles}
+                      onDelete={delMeeting}
+                      onStatusChange={updateMeetingStatus}
                       onReload={load}
                       companyId={companyId}
                     />
@@ -1237,9 +2297,20 @@ export default function MeetingWorkspace() {
           {topTab === "recordings" && (
             <RecordingsTabPanel
               meetings={meetings}
-              allRecordings={allRecordings}
+              allRecordings={[...recordings].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))}
               onDelete={delRec}
               onReload={load}
+            />
+          )}
+
+          {/* ── FILES tab ── */}
+          {topTab === "files" && (
+            <FilesTabPanel
+              meetings={meetings}
+              allFiles={files}
+              onFilesChange={setFiles}
+              allLinks={links}
+              onLinksChange={setLinks}
             />
           )}
         </div>
@@ -1249,7 +2320,11 @@ export default function MeetingWorkspace() {
         <NewMeetingModal
           companyId={companyId}
           onClose={()=>setShowNewMtg(false)}
-          onSaved={()=>{ setShowNewMtg(false); load(); }}
+          onSaved={(newFileEntries=[])=>{
+            setShowNewMtg(false);
+            if (newFileEntries.length) setFiles(prev => [...prev, ...newFileEntries]);
+            load();
+          }}
         />
       )}
     </div>

@@ -93,7 +93,7 @@ export default function Startup() {
 
   return (
     <div style={{ background:"var(--bg-base)", minHeight:"100vh" }}>
-      <TopBar title="Startup Hub" subtitle="Create meetings and capture notes in one place" />
+      <TopBar title="Startup Portal" subtitle="Create meetings and capture notes in one place" />
 
       <div style={{ maxWidth:1200, padding:"28px 32px", margin:"0 auto" }}>
 

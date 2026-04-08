@@ -12,7 +12,7 @@ const companySchema = new mongoose.Schema(
 
     status: { 
       type: String, 
-      enum: ["active","inactive","prospect","client"], 
+      enum: ["active","inactive"], 
       default: "active", 
       index: true 
     },

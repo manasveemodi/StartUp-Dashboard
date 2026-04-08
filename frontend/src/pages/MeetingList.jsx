@@ -10,8 +10,7 @@ import TopBar           from "../components/TopBar";
 const statusConf = {
   active:   { color:"#059669", bg:"#d1fae5", label:"Active"   },
   inactive: { color:"#6b7280", bg:"#f3f4f6", label:"Inactive" },
-  prospect: { color:"#d97706", bg:"#fef3c7", label:"Prospect" },
-  client:   { color:"#4f46e5", bg:"#ede9fe", label:"Client"   },
+  
 };
 
 function fmtTime(s) {
