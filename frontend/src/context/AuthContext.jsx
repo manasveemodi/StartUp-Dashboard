@@ -5,10 +5,10 @@ const AuthContext = createContext(null);
 
 // Replace your old API definition with this:
 const API = axios.create({
-  // Use the Render environment variable if available, otherwise use localhost
+  // 1. Clean up the logic to only point to the base /api route
   baseURL: process.env.REACT_APP_API_URL 
-    ? `${process.env.REACT_APP_API_URL}/api` 
-    : "https://startup-dashboard-3v28.onrender.com/api/auth/register",
+    ? `${process.env.REACT_APP_API_URL.replace(/\/$/, "")}/api` 
+    : "https://startup-dashboard-3v28.onrender.com/api",
   withCredentials: true,
 });
 
