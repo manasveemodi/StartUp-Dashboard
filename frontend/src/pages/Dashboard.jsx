@@ -436,7 +436,6 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
-            <MeetingTrendsChart data={data} loading={loading} />
           </div>
 
         </div>
