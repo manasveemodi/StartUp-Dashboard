@@ -131,7 +131,7 @@ const CTooltip = ({ active, payload, label }) => {
   );
 };
 
-// --- MEETING TRENDS CHART (replaces Action Items block) ---
+// --- MEETING TRENDS CHART ---
 function MeetingTrendsChart({ data, loading }) {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -139,7 +139,6 @@ function MeetingTrendsChart({ data, loading }) {
   useEffect(() => {
     if (loading || !chartRef.current) return;
 
-    // Destroy previous chart instance before creating a new one
     if (chartInstance.current) {
       chartInstance.current.destroy();
       chartInstance.current = null;
@@ -151,8 +150,6 @@ function MeetingTrendsChart({ data, loading }) {
       : "rgba(0,0,0,0.06)";
     const tickColor = isDark ? "#888" : "#999";
 
-    // Use real API data if available (expects data.monthlyTrends array),
-    // otherwise fall back to illustrative placeholder data.
     const monthly = data?.monthlyTrends || [
       { month: "Nov", scheduled: 18, completed: 14, cancelled: 4 },
       { month: "Dec", scheduled: 22, completed: 17, cancelled: 5 },
@@ -321,26 +318,6 @@ export default function Dashboard() {
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const today = format(new Date(), "EEEE, MMMM d, yyyy");
 
-  const statusData = data?.counts
-    ? [
-        {
-          name: "Scheduled",
-          value: data.counts.scheduledMeetings || 0,
-          color: "#6366f1",
-        },
-        {
-          name: "Ongoing",
-          value: data.counts.ongoingMeetings || 0,
-          color: "#059669",
-        },
-        {
-          name: "Completed",
-          value: data.counts.completedMeetings || 0,
-          color: "#0891b2",
-        },
-      ]
-    : [];
-
   const priorityData = data?.notesByPriority
     ? [
         { name: "High", value: data.notesByPriority.high || 0 },
@@ -451,58 +428,17 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Middle Charts Row */}
+        {/* Charts Row — 1/3 + 2/3 split */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
+            gridTemplateColumns: "1fr 2fr",
             gap: 16,
             marginBottom: 24,
           }}
         >
 
-          {/* Chart 1: Meetings by Status (Donut) */}
-          <div className="card" style={{ padding: 20 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
-              }}
-            >
-              <BarChart2 size={15} color="var(--accent)" />
-              <span style={{ fontSize: 13, fontWeight: 600 }}>
-                Meetings by Status
-              </span>
-            </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={52}
-                  outerRadius={78}
-                  paddingAngle={3}
-                  dataKey="value"
-                  strokeWidth={0}
-                >
-                  {statusData.map((e, i) => (
-                    <Cell key={i} fill={e.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CTooltip />} />
-                <Legend
-                  iconType="circle"
-                  iconSize={7}
-                  wrapperStyle={{ fontSize: 11 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Chart 2: Notes by Priority (Bar) */}
+          {/* Chart 1: Notes by Priority (Bar) */}
           <div className="card" style={{ padding: 20 }}>
             <div
               style={{
@@ -518,7 +454,7 @@ export default function Dashboard() {
               </span>
             </div>
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={priorityData} barSize={28}>
+              <BarChart data={priorityData} barSize={36}>
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 11 }}
@@ -545,7 +481,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* Chart 3: Meeting Trends (Line) — NEW */}
+          {/* Chart 2: Meeting Trends (Line) */}
           <div className="card" style={{ padding: 20 }}>
             <div
               style={{
@@ -555,9 +491,7 @@ export default function Dashboard() {
                 marginBottom: 16,
               }}
             >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
-              >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <TrendingUp size={15} color="var(--green)" />
                 <span style={{ fontSize: 13, fontWeight: 600 }}>
                   Meeting Trends
@@ -580,11 +514,7 @@ export default function Dashboard() {
                 ].map(([color, label]) => (
                   <span
                     key={label}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
                   >
                     <span
                       style={{
