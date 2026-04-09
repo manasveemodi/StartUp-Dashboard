@@ -79,7 +79,7 @@ function StatusDropdown({ value, onChange, small=false }) {
           position:"absolute", top:"calc(100% + 6px)", left:0, zIndex:999,
           background:"var(--bg-card)", border:"1px solid var(--border)",
           borderRadius:"var(--radius-sm)", boxShadow:"0 8px 24px rgba(0,0,0,0.12)",
-          minWidth:148, overflow:"hidden",
+          minWidth:148, overflow:"visible",
         }}>
           {STATUS_OPTIONS.map(opt => (
             <button
