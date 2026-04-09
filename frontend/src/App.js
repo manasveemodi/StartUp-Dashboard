@@ -7,6 +7,7 @@ import { ToastProvider } from "./context/ToastContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CompanyTimeProvider } from "./context/CompanyTimeContext";
 import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
+import { SidebarContext } from "./context/SidebarContext";
 
 import Sidebar          from "./components/Sidebar";
 import Dashboard        from "./pages/Dashboard";
@@ -26,54 +27,51 @@ import AdminUsers       from "./pages/AdminUsers";
 function Shell({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const toggleSidebar = () => setSidebarOpen(o => !o);
+  const closeSidebar  = () => setSidebarOpen(false);
+
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:"var(--bg-base)" }}>
-      {/* Mobile overlay backdrop */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{
-            display: "none",
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.45)",
-            zIndex: 99,
-          }}
-          className="mobile-overlay"
-        />
-      )}
+    <SidebarContext.Provider value={{ sidebarOpen, toggleSidebar, closeSidebar }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-base)" }}>
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      <main style={{
-        flex: 1,
-        marginLeft: "var(--sidebar-width)",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-        className="shell-main"
-      >
-        {/* Pass toggle to children via cloneElement */}
-        {React.Children.map(children, child =>
-          React.isValidElement(child)
-            ? React.cloneElement(child, { onMenuToggle: () => setSidebarOpen(o => !o) })
-            : child
+        {/* Mobile overlay backdrop — sits above content, below sidebar */}
+        {sidebarOpen && (
+          <div
+            onClick={closeSidebar}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.45)",
+              zIndex: 98,        /* just below sidebar's z-index 100 */
+              backdropFilter: "blur(2px)",
+            }}
+          />
         )}
-      </main>
 
-      {/* Inline responsive styles */}
-      <style>{`
-        @media (max-width: 768px) {
-          .shell-main {
-            margin-left: 0 !important;
+        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
+
+        <main
+          style={{
+            flex: 1,
+            marginLeft: "var(--sidebar-width)",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
+          className="shell-main"
+        >
+          {children}
+        </main>
+
+        <style>{`
+          @media (max-width: 768px) {
+            .shell-main {
+              margin-left: 0 !important;
+            }
           }
-          .mobile-overlay {
-            display: block !important;
-          }
-        }
-      `}</style>
-    </div>
+        `}</style>
+      </div>
+    </SidebarContext.Provider>
   );
 }
 
@@ -93,31 +91,31 @@ function AppRoutes() {
     <Routes>
 
       {/* Auth */}
-      <Route path="/login" element={<GuestRoute><Login/></GuestRoute>} />
-      <Route path="/register" element={<GuestRoute><Register/></GuestRoute>} />
+      <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
+      <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
 
       {/* Dashboard */}
-      <Route path="/" element={<P><Dashboard/></P>} />
+      <Route path="/" element={<P><Dashboard /></P>} />
 
       {/* Companies */}
-      <Route path="/companies" element={<P><CompanyList/></P>} />
-      <Route path="/companies/new" element={<P><CompanyRegister/></P>} />
+      <Route path="/companies"     element={<P><CompanyList /></P>} />
+      <Route path="/companies/new" element={<P><CompanyRegister /></P>} />
 
       {/* Company Details Page */}
-      <Route path="/companies/:companyId" element={<P><MeetingWorkspace/></P>} />
+      <Route path="/companies/:companyId" element={<P><MeetingWorkspace /></P>} />
 
       {/* Meetings */}
-      <Route path="/meetings" element={<P><MeetingList/></P>} />
-      <Route path="/meetings/:companyId" element={<P><MeetingWorkspace/></P>} />
+      <Route path="/meetings"            element={<P><MeetingList /></P>} />
+      <Route path="/meetings/:companyId" element={<P><MeetingWorkspace /></P>} />
 
       {/* Other */}
-      <Route path="/notes" element={<P><AllNotes/></P>} />
-      <Route path="/recordings" element={<P><AllRecordings/></P>} />
-      <Route path="/profile" element={<P><Profile/></P>} />
+      <Route path="/notes"      element={<P><AllNotes /></P>} />
+      <Route path="/recordings" element={<P><AllRecordings /></P>} />
+      <Route path="/profile"    element={<P><Profile /></P>} />
 
       {/* ADMIN ONLY */}
       {user?.role === "admin" && (
-        <Route path="/admin/users" element={<P><AdminUsers/></P>} />
+        <Route path="/admin/users" element={<P><AdminUsers /></P>} />
       )}
 
     </Routes>
