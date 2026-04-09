@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Moon, Bell } from "lucide-react";
+import { Sun, Moon, Bell, Menu } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -17,53 +17,141 @@ function Avatar({ name, size = 30 }) {
   );
 }
 
-export default function TopBar({ title, subtitle }) {
+export default function TopBar({ title, subtitle, onMenuToggle }) {
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
   const isDark = theme === "dark";
 
   return (
-    <div style={{
-      position:"sticky", top:0, zIndex:50,
-      background:"var(--bg-surface)", borderBottom:"1px solid var(--border)",
-      padding:"0 32px", height:"var(--header-height)",
-      display:"flex", alignItems:"center", justifyContent:"space-between",
-      backdropFilter:"blur(12px)",
-      boxShadow:"var(--shadow-xs)",
-    }}>
-      <div>
-        <h1 style={{ fontSize:17, fontWeight:700, color:"var(--text-primary)", letterSpacing:"-0.3px", lineHeight:1 }}>{title}</h1>
-        {subtitle && <p style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>{subtitle}</p>}
-      </div>
+    <>
+      <div style={{
+        position:"sticky", top:0, zIndex:50,
+        background:"var(--bg-surface)", borderBottom:"1px solid var(--border)",
+        padding:"0 32px", height:"var(--header-height)",
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+        backdropFilter:"blur(12px)",
+        boxShadow:"var(--shadow-xs)",
+      }}
+        className="topbar-root"
+      >
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          {/* ── Hamburger: only visible on mobile ── */}
+          <button
+            onClick={onMenuToggle}
+            className="hamburger-btn"
+            title="Toggle menu"
+            style={{
+              display: "none",           /* hidden on desktop, shown via CSS on mobile */
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36, height: 36,
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--border)",
+              background: "var(--bg-elevated)",
+              cursor: "pointer",
+              color: "var(--text-secondary)",
+              flexShrink: 0,
+            }}
+          >
+            <Menu size={18} />
+          </button>
 
-      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        {/* Dark mode toggle */}
-        <button onClick={toggle} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          style={{
-            width:36, height:36, borderRadius:"var(--radius-sm)",
-            border:"1px solid var(--border)", background:"var(--bg-elevated)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            cursor:"pointer", color:"var(--text-secondary)", transition:"all 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; e.currentTarget.style.background="var(--accent-soft)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-secondary)"; e.currentTarget.style.background="var(--bg-elevated)"; }}>
-          {isDark ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
+          {/* Title + subtitle */}
+          <div>
+            <h1 style={{ fontSize:17, fontWeight:700, color:"var(--text-primary)", letterSpacing:"-0.3px", lineHeight:1 }}>
+              {title}
+            </h1>
+            {subtitle && (
+              <p style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
 
-        {/* Notifications */}
-        <button title="Notifications" style={{ width:36, height:36, borderRadius:"var(--radius-sm)", border:"1px solid var(--border)", background:"var(--bg-elevated)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"var(--text-secondary)", transition:"all 0.15s", position:"relative" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor="var(--border-accent)"; e.currentTarget.style.color="var(--text-primary)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-secondary)"; }}>
-          <Bell size={15} />
-          <span style={{ position:"absolute", top:7, right:7, width:6, height:6, borderRadius:"50%", background:"var(--rose)", border:"2px solid var(--bg-surface)" }} />
-        </button>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {/* Dark mode toggle */}
+          <button
+            onClick={toggle}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            style={{
+              width:36, height:36, borderRadius:"var(--radius-sm)",
+              border:"1px solid var(--border)", background:"var(--bg-elevated)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              cursor:"pointer", color:"var(--text-secondary)", transition:"all 0.15s",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor="var(--accent)";
+              e.currentTarget.style.color="var(--accent)";
+              e.currentTarget.style.background="var(--accent-soft)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor="var(--border)";
+              e.currentTarget.style.color="var(--text-secondary)";
+              e.currentTarget.style.background="var(--bg-elevated)";
+            }}
+          >
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
 
-        {/* User avatar */}
-        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 10px", borderRadius:"var(--radius-sm)", border:"1px solid var(--border)", background:"var(--bg-elevated)" }}>
-          <Avatar name={user?.name} size={24} />
-          <span style={{ fontSize:12, fontWeight:500, color:"var(--text-primary)" }}>{user?.name?.split(" ")[0]}</span>
+          {/* Notifications */}
+          <button
+            title="Notifications"
+            style={{
+              width:36, height:36, borderRadius:"var(--radius-sm)",
+              border:"1px solid var(--border)", background:"var(--bg-elevated)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              cursor:"pointer", color:"var(--text-secondary)", transition:"all 0.15s",
+              position:"relative"
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor="var(--border-accent)";
+              e.currentTarget.style.color="var(--text-primary)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor="var(--border)";
+              e.currentTarget.style.color="var(--text-secondary)";
+            }}
+          >
+            <Bell size={15} />
+            <span style={{
+              position:"absolute", top:7, right:7,
+              width:6, height:6, borderRadius:"50%",
+              background:"var(--rose)", border:"2px solid var(--bg-surface)"
+            }} />
+          </button>
+
+          {/* User avatar */}
+          <div style={{
+            display:"flex", alignItems:"center", gap:8, padding:"4px 10px",
+            borderRadius:"var(--radius-sm)", border:"1px solid var(--border)",
+            background:"var(--bg-elevated)"
+          }}>
+            <Avatar name={user?.name} size={24} />
+            <span
+              className="topbar-username"
+              style={{ fontSize:12, fontWeight:500, color:"var(--text-primary)" }}
+            >
+              {user?.name?.split(" ")[0]}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Responsive styles — hamburger visible only on mobile */}
+      <style>{`
+        @media (max-width: 768px) {
+          .topbar-root {
+            padding: 0 16px !important;
+          }
+          .hamburger-btn {
+            display: flex !important;
+          }
+          .topbar-username {
+            display: none;
+          }
+        }
+      `}</style>
+    </>
   );
 }

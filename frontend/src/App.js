@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 
@@ -24,18 +24,55 @@ import AdminUsers       from "./pages/AdminUsers";
 
 // ── Layout Wrapper ───────────────────────────────────────────
 function Shell({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:"var(--bg-base)" }}>
-      <Sidebar />
+      {/* Mobile overlay backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            display: "none",
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 99,
+          }}
+          className="mobile-overlay"
+        />
+      )}
+
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <main style={{
-        flex:1,
-        marginLeft:"var(--sidebar-width)",
-        minHeight:"100vh",
-        display:"flex",
-        flexDirection:"column"
-      }}>
-        {children}
+        flex: 1,
+        marginLeft: "var(--sidebar-width)",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+        className="shell-main"
+      >
+        {/* Pass toggle to children via cloneElement */}
+        {React.Children.map(children, child =>
+          React.isValidElement(child)
+            ? React.cloneElement(child, { onMenuToggle: () => setSidebarOpen(o => !o) })
+            : child
+        )}
       </main>
+
+      {/* Inline responsive styles */}
+      <style>{`
+        @media (max-width: 768px) {
+          .shell-main {
+            margin-left: 0 !important;
+          }
+          .mobile-overlay {
+            display: block !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -50,7 +87,7 @@ const P = ({ children }) => (
 
 // ── Routes with Role Access ──────────────────────────────────
 function AppRoutes() {
-  const { user } = useAuth(); // ✅ get logged-in user
+  const { user } = useAuth();
 
   return (
     <Routes>
@@ -69,7 +106,7 @@ function AppRoutes() {
       {/* Company Details Page */}
       <Route path="/companies/:companyId" element={<P><MeetingWorkspace/></P>} />
 
-      {/* Meetings (optional - remove later if needed) */}
+      {/* Meetings */}
       <Route path="/meetings" element={<P><MeetingList/></P>} />
       <Route path="/meetings/:companyId" element={<P><MeetingWorkspace/></P>} />
 
@@ -78,7 +115,7 @@ function AppRoutes() {
       <Route path="/recordings" element={<P><AllRecordings/></P>} />
       <Route path="/profile" element={<P><Profile/></P>} />
 
-      {/* ✅ ADMIN ONLY */}
+      {/* ADMIN ONLY */}
       {user?.role === "admin" && (
         <Route path="/admin/users" element={<P><AdminUsers/></P>} />
       )}
