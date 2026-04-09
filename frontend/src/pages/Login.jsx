@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Zap, Mail, Lock, Eye, EyeOff,
@@ -8,19 +8,28 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 
 export default function Login() {
-  const [form, setForm] = useState({ email:"", password:"" });
-  const [showPw, setShowPw] = useState(false);
+  const [form, setForm]       = useState({ email:"", password:"" });
+  const [showPw, setShowPw]   = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false); // ✅ modal control
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const { login } = useAuth();
-  const toast = useToast();
-  const navigate = useNavigate();
+  const toast     = useToast();
+  const navigate  = useNavigate();
 
   const set = (k,v) => setForm(f => ({ ...f, [k]:v }));
+
+  // ✅ detect screen resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -46,15 +55,17 @@ export default function Login() {
   return (
     <div style={{ minHeight:"100vh", display:"flex", background:"var(--bg-base)" }}>
 
-      {/* ✅ HAMBURGER */}
-      <div className="mobile-menu-btn" style={{ position:"fixed", top:16, right:16, zIndex:1000 }}>
-        <button onClick={()=>setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={20}/> : <Menu size={20}/>}
-        </button>
-      </div>
+      {/* ✅ MOBILE HAMBURGER */}
+      {isMobile && (
+        <div style={{ position:"fixed", top:16, right:16, zIndex:1000 }}>
+          <button onClick={()=>setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X size={20}/> : <Menu size={20}/>}
+          </button>
+        </div>
+      )}
 
-      {/* ✅ MENU */}
-      {menuOpen && (
+      {/* ✅ MOBILE MENU */}
+      {isMobile && menuOpen && (
         <div style={{
           position:"fixed",
           top:60,
@@ -66,12 +77,20 @@ export default function Login() {
           boxShadow:"0 10px 30px rgba(0,0,0,0.15)",
           zIndex:999
         }}>
-          <Link to="/" onClick={()=>setMenuOpen(false)}>Home</Link>
+          <div
+            style={{ cursor:"pointer", marginBottom:10 }}
+            onClick={()=>{
+              navigate("/");
+              setMenuOpen(false);
+            }}
+          >
+            Home
+          </div>
 
           <div
-            style={{ marginTop:10, cursor:"pointer", fontWeight:600 }}
+            style={{ cursor:"pointer", fontWeight:600 }}
             onClick={()=>{
-              setShowLogin(true);
+              navigate("/login");
               setMenuOpen(false);
             }}
           >
@@ -80,52 +99,67 @@ export default function Login() {
         </div>
       )}
 
-      {/* LEFT PANEL (UNCHANGED) */}
-      <div className="login-left" style={{
-        flex:"1",
-        background:"linear-gradient(135deg,#0f0e2e,#1a1040,#0c1a2e)",
-        display:"flex",
-        alignItems:"center",
-        justifyContent:"center"
-      }}>
-        <h1 style={{ color:"#fff" }}>Welcome</h1>
+      {/* LEFT PANEL (ALWAYS SHOW) */}
+      <div
+        style={{
+          flex:"1 1 480px",
+          minWidth:300,
+          background:"linear-gradient(135deg, #0f0e2e 0%, #1a1040 50%, #0c1a2e 100%)",
+          display:"flex",
+          flexDirection:"column",
+          justifyContent:"center",
+          padding:"60px 56px",
+          position:"relative",
+          overflow:"hidden"
+        }}
+      >
+        <div style={{ position:"absolute", top:-80, left:-80, width:300, height:300, borderRadius:"50%", background:"rgba(99,102,241,0.10)" }} />
+        <div style={{ position:"absolute", bottom:-60, right:-40, width:200, height:200, borderRadius:"50%", background:"rgba(8,145,178,0.08)" }} />
+
+        <div style={{ position:"relative", zIndex:1 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:56 }}>
+            <div style={{ width:38, height:38, borderRadius:10, background:"linear-gradient(135deg,#6366f1,#22d3ee)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Zap size={18} color="#fff" fill="#fff" />
+            </div>
+            <span style={{ fontSize:18, fontWeight:800, color:"#f1f5f9" }}>
+              StartUp Portal
+            </span>
+          </div>
+
+          <h1 style={{ fontSize:32, fontWeight:800, color:"#f1f5f9", marginBottom:16 }}>
+            Every meeting.<br />Captured perfectly.
+          </h1>
+
+          <p style={{ fontSize:14, color:"#94a3b8", marginBottom:40 }}>
+            The enterprise meeting platform that captures notes and recordings.
+          </p>
+        </div>
       </div>
 
-      {/* ❌ REMOVED RIGHT PANEL DEFAULT */}
-
-      {/* ✅ LOGIN MODAL */}
-      {showLogin && (
+      {/* ✅ RIGHT PANEL (DESKTOP ONLY) */}
+      {!isMobile && (
         <div
           style={{
-            position:"fixed",
-            inset:0,
-            background:"rgba(0,0,0,0.5)",
+            flex:"1 1 400px",
             display:"flex",
             alignItems:"center",
             justifyContent:"center",
-            zIndex:2000
+            padding:"20px"
           }}
-          onClick={()=>setShowLogin(false)}
         >
-          <div
-            style={{
-              background:"#fff",
-              padding:20,
-              borderRadius:12,
-              width:"90%",
-              maxWidth:380
-            }}
-            onClick={(e)=>e.stopPropagation()}
-          >
+          <div style={{ width:"100%", maxWidth:380, margin:"0 auto" }}>
 
-            <h2 style={{ fontWeight:800 }}>Sign in</h2>
+            <h2 style={{ fontSize:24, fontWeight:800 }}>
+              Sign in to your account
+            </h2>
 
             {error && <div style={{ color:"red" }}>{error}</div>}
 
-            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16, marginTop:20 }}>
 
               <input
                 className="input"
+                type="email"
                 placeholder="Email"
                 value={form.email}
                 onChange={e=>set("email",e.target.value)}
@@ -133,7 +167,7 @@ export default function Login() {
 
               <input
                 className="input"
-                type={showPw ? "text":"password"}
+                type="password"
                 placeholder="Password"
                 value={form.password}
                 onChange={e=>set("password",e.target.value)}
@@ -144,9 +178,11 @@ export default function Login() {
               </button>
 
             </form>
+
           </div>
         </div>
       )}
+
     </div>
   );
 }
