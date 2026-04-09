@@ -58,7 +58,7 @@ function NL({ to, icon: Icon, label, exact=false, sub=false }) {
 }
 
 /* ─── Main Sidebar ─────────────────────────────────────────── */
-export default function Sidebar({ isOpen, setIsOpen }) {
+export default function Sidebar() {
   const { user, logout }  = useAuth();
   const toast             = useToast();
   const navigate          = useNavigate();
@@ -66,145 +66,120 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const rc = roleConf[user?.role] || roleConf.member;
 
   return (
-    <>
-      {/* Overlay (mobile only) */}
-      {isOpen && (
-        <div
-          onClick={() => setIsOpen(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.4)",
-            zIndex: 99
-          }}
-        />
-      )}
+    <aside style={{
+      width:"var(--sidebar-width)",
+      minHeight:"100vh",
+      position:"fixed",
+      top:0,
+      left:0,
+      zIndex:100,
+      background:"var(--bg-sidebar)",
+      borderRight:"1px solid var(--border)",
+      display:"flex",
+      flexDirection:"column"
+    }}>
 
-      <aside style={{
-        width:"var(--sidebar-width)",
-        minHeight:"100vh",
-        position:"fixed",
-        top:0,
-        left:0,
-        zIndex:100,
-        background:"var(--bg-sidebar)",
-        borderRight:"1px solid var(--border)",
-        display:"flex",
-        flexDirection:"column",
-
-        /* 🔥 MOBILE TOGGLE MAGIC */
-        transform: isOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 0.3s ease-in-out",
-
-        /* Desktop always visible */
-        ...(window.innerWidth >= 768 && {
-          transform: "translateX(0)"
-        })
-      }}>
-
-        {/* Logo */}
-        <div style={{ padding:"20px 18px 16px", borderBottom:"1px solid var(--border)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{
-              width:34, height:34, borderRadius:10,
-              background:"linear-gradient(135deg,var(--accent),var(--teal))",
-              display:"flex", alignItems:"center", justifyContent:"center"
-            }}>
-              <Zap size={16} color="#fff"/>
-            </div>
-            <div>
-              <div style={{ fontWeight:800, fontSize:15 }}>StartUp Portal</div>
-              <div style={{ fontSize:10, color:"var(--text-muted)" }}>
-                ENTERPRISE PLATFORM
-              </div>
+      {/* Logo */}
+      <div style={{ padding:"20px 18px 16px", borderBottom:"1px solid var(--border)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{
+            width:34, height:34, borderRadius:10,
+            background:"linear-gradient(135deg,var(--accent),var(--teal))",
+            display:"flex", alignItems:"center", justifyContent:"center"
+          }}>
+            <Zap size={16} color="#fff"/>
+          </div>
+          <div>
+            <div style={{ fontWeight:800, fontSize:15 }}>StartUp Portal</div>
+            <div style={{ fontSize:10, color:"var(--text-muted)" }}>
+              ENTERPRISE PLATFORM
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Navigation */}
-        <nav style={{ flex:1, padding:"12px 10px", overflowY:"auto" }}>
-          <NL to="/" icon={LayoutDashboard} label="Dashboard" exact/>
-          <NL to="/companies" icon={Building2} label="Companies" exact />
-          <NL to="/notes" icon={FileText} label="All Notes"/>
-          <NL to="/recordings" icon={Mic} label="Recordings"/>
+      {/* Navigation */}
+      <nav style={{ flex:1, padding:"12px 10px", overflowY:"auto" }}>
+        <NL to="/" icon={LayoutDashboard} label="Dashboard" exact/>
+        <NL to="/companies" icon={Building2} label="Companies" exact />
+        <NL to="/notes" icon={FileText} label="All Notes"/>
+        <NL to="/recordings" icon={Mic} label="Recordings"/>
 
-          {user?.role==="admin" && (
-            <>
-              <div style={{
-                fontSize:10,
-                fontWeight:700,
-                letterSpacing:"1px",
-                color:"var(--text-muted)",
-                padding:"14px 12px 6px",
-                textTransform:"uppercase"
-              }}>
-                Admin
-              </div>
-              <NL to="/admin/users" icon={Users} label="User Management"/>
-            </>
-          )}
-        </nav>
-
-        {/* User panel */}
-        <div style={{ padding:"10px", borderTop:"1px solid var(--border)" }}>
-          <button
-            onClick={()=>setUserOpen(!userOpen)}
-            style={{
-              width:"100%", display:"flex", alignItems:"center", gap:10,
-              padding:"10px 12px", borderRadius:"var(--radius-sm)",
-              border:"1px solid var(--border)",
-              background:"var(--bg-elevated)", cursor:"pointer"
-            }}
-          >
-            <Avatar name={user?.name} size={28}/>
-            <div style={{ flex:1, textAlign:"left" }}>
-              <div style={{ fontSize:12, fontWeight:600 }}>
-                {user?.name||"User"}
-              </div>
-              <div style={{ fontSize:10, color:rc.color }}>
-                {rc.label}
-              </div>
-            </div>
-            <ChevronDown size={12}/>
-          </button>
-
-          {userOpen && (
+        {user?.role==="admin" && (
+          <>
             <div style={{
-              marginTop:6,
-              background:"var(--bg-card)",
-              border:"1px solid var(--border)",
-              borderRadius:"var(--radius-sm)"
+              fontSize:10,
+              fontWeight:700,
+              letterSpacing:"1px",
+              color:"var(--text-muted)",
+              padding:"14px 12px 6px",
+              textTransform:"uppercase"
             }}>
-              <NavLink to="/profile"
-                style={{
-                  display:"flex", gap:8, padding:"9px 12px",
-                  textDecoration:"none", color:"var(--text-secondary)"
-                }}>
-                <User size={13}/> My Profile
-              </NavLink>
-
-              <button
-                onClick={()=>{
-                  logout();
-                  toast.info("Signed out. See you soon!");
-                  navigate("/login");
-                }}
-                style={{
-                  width:"100%", display:"flex", gap:8,
-                  padding:"9px 12px", border:"none",
-                  background:"none", color:"var(--rose)",
-                  cursor:"pointer"
-                }}
-              >
-                <LogOut size={13}/> Sign Out
-              </button>
+              Admin
             </div>
-          )}
-        </div>
-      </aside>
-    </>
+            <NL to="/admin/users" icon={Users} label="User Management"/>
+          </>
+        )}
+      </nav>
+
+      {/* ❌ TIMER REMOVED HERE */}
+
+      {/* User panel */}
+      <div style={{ padding:"10px", borderTop:"1px solid var(--border)" }}>
+        <button
+          onClick={()=>setUserOpen(!userOpen)}
+          style={{
+            width:"100%", display:"flex", alignItems:"center", gap:10,
+            padding:"10px 12px", borderRadius:"var(--radius-sm)",
+            border:"1px solid var(--border)",
+            background:"var(--bg-elevated)", cursor:"pointer"
+          }}
+        >
+          <Avatar name={user?.name} size={28}/>
+          <div style={{ flex:1, textAlign:"left" }}>
+            <div style={{ fontSize:12, fontWeight:600 }}>
+              {user?.name||"User"}
+            </div>
+            <div style={{ fontSize:10, color:rc.color }}>
+              {rc.label}
+            </div>
+          </div>
+          <ChevronDown size={12}/>
+        </button>
+
+        {userOpen && (
+          <div style={{
+            marginTop:6,
+            background:"var(--bg-card)",
+            border:"1px solid var(--border)",
+            borderRadius:"var(--radius-sm)"
+          }}>
+            <NavLink to="/profile"
+              style={{
+                display:"flex", gap:8, padding:"9px 12px",
+                textDecoration:"none", color:"var(--text-secondary)"
+              }}>
+              <User size={13}/> My Profile
+            </NavLink>
+
+            <button
+              onClick={()=>{
+                logout();
+                toast.info("Signed out. See you soon!");
+                navigate("/login");
+              }}
+              style={{
+                width:"100%", display:"flex", gap:8,
+                padding:"9px 12px", border:"none",
+                background:"none", color:"var(--rose)",
+                cursor:"pointer"
+              }}
+            >
+              <LogOut size={13}/> Sign Out
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }
