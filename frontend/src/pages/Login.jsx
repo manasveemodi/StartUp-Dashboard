@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Zap, Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react";
+import {
+  Zap, Mail, Lock, Eye, EyeOff,
+  AlertCircle, ArrowRight, Menu, X
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 
@@ -9,25 +12,30 @@ export default function Login() {
   const [showPw, setShowPw]   = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
-  const { login }             = useAuth();
-  const toast                 = useToast();
-  const navigate              = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false); // ✅ NEW
+
+  const { login } = useAuth();
+  const toast     = useToast();
+  const navigate  = useNavigate();
+
   const set = (k,v) => setForm(f => ({ ...f, [k]:v }));
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError("");
+
     if (!form.email || !form.password) {
       setError("Please fill in all fields.");
       return;
     }
+
     setLoading(true);
     try {
       await login(form.email, form.password);
       toast.success("Welcome back!");
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+      setError(err.response?.data?.message || "Invalid credentials.");
     } finally {
       setLoading(false);
     }
@@ -38,10 +46,71 @@ export default function Login() {
       style={{
         minHeight: "100vh",
         display: "flex",
-        flexWrap: "wrap", // ✅ important for mobile
+        flexWrap: "wrap",
         background: "var(--bg-base)"
       }}
     >
+
+      {/* ✅ HAMBURGER MENU BUTTON */}
+      <div
+        className="mobile-menu-btn"
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 1000
+        }}
+      >
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          style={{
+            background: "#fff",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: 8,
+            cursor: "pointer",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
+          }}
+        >
+          {menuOpen ? <X size={18}/> : <Menu size={18}/>}
+        </button>
+      </div>
+
+      {/* ✅ DROPDOWN MENU */}
+      {menuOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 60,
+            right: 16,
+            width: 200,
+            background: "#fff",
+            borderRadius: 10,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            padding: 12,
+            zIndex: 999,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10
+          }}
+        >
+          <Link to="/" onClick={()=>setMenuOpen(false)}>Home</Link>
+          <Link to="/register" onClick={()=>setMenuOpen(false)}>Create Account</Link>
+          <button
+            onClick={()=>setMenuOpen(false)}
+            style={{
+              padding: "8px",
+              borderRadius: 6,
+              border: "none",
+              background: "var(--accent)",
+              color: "#fff",
+              cursor: "pointer"
+            }}
+          >
+            Sign In
+          </button>
+        </div>
+      )}
 
       {/* LEFT PANEL */}
       <div
@@ -71,26 +140,13 @@ export default function Login() {
             </span>
           </div>
 
-          <h1 style={{ fontSize:32, fontWeight:800, color:"#f1f5f9", lineHeight:1.2, marginBottom:16 }}>
+          <h1 style={{ fontSize:32, fontWeight:800, color:"#f1f5f9", marginBottom:16 }}>
             Every meeting.<br />Captured perfectly.
           </h1>
 
           <p style={{ fontSize:14, color:"#94a3b8", marginBottom:40 }}>
-            The enterprise meeting platform that captures notes, records audio, and turns your discussions into actionable outcomes.
+            The enterprise meeting platform that captures notes and recordings.
           </p>
-
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-            {[
-              "📝 Structured notes per discussion topic",
-              "🎤 Voice recording with instant playback",
-              "✅ Action items with assignees & due dates",
-              "📊 Analytics dashboard for your entire team"
-            ].map(item => (
-              <div key={item} style={{ fontSize:13, color:"#cbd5e1", display:"flex", gap:8 }}>
-                {item}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -106,101 +162,49 @@ export default function Login() {
       >
         <div style={{ width:"100%", maxWidth:380, margin:"0 auto" }}>
 
-          <div style={{ marginBottom:32 }}>
-            <h2 className="login-title" style={{ fontSize:24, fontWeight:800, marginBottom:6 }}>
-              Sign in to your account
-            </h2>
-            <p style={{ fontSize:13, color:"var(--text-muted)" }}>
-              Access your meeting workspace
-            </p>
-          </div>
+          <h2 className="login-title" style={{ fontSize:24, fontWeight:800 }}>
+            Sign in to your account
+          </h2>
 
           {error && (
             <div style={{
               display:"flex",
               gap:8,
-              padding:"11px 14px",
-              borderRadius:"var(--radius-sm)",
-              background:"var(--rose-soft)",
-              border:"1px solid var(--rose)",
-              marginBottom:20,
-              fontSize:13,
-              color:"var(--rose)"
+              padding:"10px",
+              background:"#fee",
+              marginTop:10
             }}>
-              <AlertCircle size={14} /> {error}
+              <AlertCircle size={14}/> {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16, marginTop:20 }}>
 
-            {/* EMAIL */}
-            <div>
-              <label style={{ fontSize:11, fontWeight:700, marginBottom:6, display:"block" }}>
-                Email Address
-              </label>
-              <div style={{ position:"relative" }}>
-                <Mail size={14} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)" }} />
-                <input
-                  className="input"
-                  type="email"
-                  value={form.email}
-                  onChange={e => set("email",e.target.value)}
-                  placeholder="you@company.com"
-                  style={{ paddingLeft:38 }}
-                />
-              </div>
-            </div>
+            <input
+              className="input"
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={e => set("email", e.target.value)}
+            />
 
-            {/* PASSWORD */}
-            <div>
-              <label style={{ fontSize:11, fontWeight:700, marginBottom:6, display:"block" }}>
-                Password
-              </label>
-              <div style={{ position:"relative" }}>
-                <Lock size={14} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)" }} />
-                <input
-                  className="input"
-                  type={showPw ? "text" : "password"}
-                  value={form.password}
-                  onChange={e => set("password",e.target.value)}
-                  placeholder="Enter your password"
-                  style={{ paddingLeft:38, paddingRight:40 }}
-                />
-                <button
-                  type="button"
-                  onClick={()=>setShowPw(!showPw)}
-                  style={{
-                    position:"absolute",
-                    right:12,
-                    top:"50%",
-                    transform:"translateY(-50%)",
-                    background:"none",
-                    border:"none",
-                    cursor:"pointer"
-                  }}
-                >
-                  {showPw ? <EyeOff size={14}/> : <Eye size={14}/>}
-                </button>
-              </div>
-            </div>
+            <input
+              className="input"
+              type={showPw ? "text" : "password"}
+              placeholder="Password"
+              value={form.password}
+              onChange={e => set("password", e.target.value)}
+            />
 
-            {/* BUTTON */}
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg"
-              disabled={loading}
-              style={{ width:"100%", justifyContent:"center", marginTop:4 }}
-            >
-              {loading ? "Signing in..." : <>Sign In <ArrowRight size={15}/></>}
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          <div style={{ textAlign:"center", marginTop:20, fontSize:13 }}>
-            Don't have an account?{" "}
-            <Link to="/register" style={{ fontWeight:600 }}>
-              Create account
-            </Link>
+          <div style={{ marginTop:20 }}>
+            <Link to="/register">Create account</Link>
           </div>
+
         </div>
       </div>
     </div>
