@@ -76,7 +76,7 @@ function StatusDropdown({ value, onChange, small=false }) {
       {/* Dropdown panel */}
       {open && (
         <div style={{
-          position:"absolute", top:"calc(100% + 6px)", left:0, zIndex:9999,
+          position:"absolute", top:"calc(100% + 6px)", left:0, zIndex:999,
           background:"var(--bg-card)", border:"1px solid var(--border)",
           borderRadius:"var(--radius-sm)", boxShadow:"0 8px 24px rgba(0,0,0,0.12)",
           minWidth:148, overflow:"hidden",
@@ -1561,9 +1561,8 @@ function MeetingRow({ meeting, notes, recordings, files, onNoteDelete, onNoteEdi
 
           {/* Action bar */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:14, marginBottom:12 }}>
-          {/* Inner tabs: Notes / Recordings */}
-          <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",background:"var(--bg-base)"}}>
-              <div style={{display:"flex",gap:0,overflow:"hidden"}}></div>
+            {/* Inner tabs: Notes / Recordings */}
+            <div style={{ display:"flex", gap:0, border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", overflow:"hidden", background:"var(--bg-base)" }}>
               {[
                 { id:"notes",      label:`Notes (${nCount})`,      icon:FileText  },
                 { id:"recordings", label:`Recordings (${rCount})`, icon:Mic       },
