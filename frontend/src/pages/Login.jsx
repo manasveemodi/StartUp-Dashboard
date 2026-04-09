@@ -133,6 +133,17 @@ export default function Login() {
           <p style={{ fontSize:14, color:"#94a3b8", marginBottom:40 }}>
             The enterprise meeting platform that captures notes and recordings.
           </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+             {[ 
+              "📝 Structured notes per discussion topic",
+               "🎤 Voice recording with instant playback", 
+               "✅ Action items with assignees & due dates",
+               "📊 Analytics dashboard for your entire team" ].map(item => ( <div key={item} 
+               style={{ fontSize:13, color:"#cbd5e1", display:"flex", gap:8 }}>
+                {item} 
+                </div>
+               ))}
+             </div>
         </div>
       </div>
 
